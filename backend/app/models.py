@@ -1,0 +1,86 @@
+from datetime import date, datetime
+from decimal import Decimal
+
+from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .db import Base
+
+Money = Numeric(14, 2)
+
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    name: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class Account(Base):
+    """Cuenta de dinero: efectivo, banco, billetera."""
+    __tablename__ = "accounts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    type: Mapped[str] = mapped_column(String(20), default="bank")  # cash | bank | wallet
+    initial_balance: Mapped[Decimal] = mapped_column(Money, default=0)
+    currency: Mapped[str] = mapped_column(String(3), default="COP")
+
+
+class Category(Base):
+    __tablename__ = "categories"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    kind: Mapped[str] = mapped_column(String(10))  # income | expense
+
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), index=True)
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"), nullable=True)
+    kind: Mapped[str] = mapped_column(String(10))  # income | expense
+    amount: Mapped[Decimal] = mapped_column(Money)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    note: Mapped[str] = mapped_column(String(255), default="")
+
+
+class Debt(Base):
+    """Tarjeta de crédito o crédito (libre inversión, vehículo, hipotecario...)."""
+    __tablename__ = "debts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    kind: Mapped[str] = mapped_column(String(20))  # credit_card | loan
+    original_amount: Mapped[Decimal] = mapped_column(Money)
+    current_balance: Mapped[Decimal] = mapped_column(Money)
+    rate: Mapped[Decimal] = mapped_column(Numeric(8, 4))  # porcentaje, ej. 28.5
+    rate_type: Mapped[str] = mapped_column(String(2), default="EA")  # EA | MV | NA
+    term_months: Mapped[int | None] = mapped_column(nullable=True)
+    monthly_payment: Mapped[Decimal | None] = mapped_column(Money, nullable=True)
+    due_day: Mapped[int | None] = mapped_column(nullable=True)
+
+
+class DebtPayment(Base):
+    __tablename__ = "debt_payments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    debt_id: Mapped[int] = mapped_column(ForeignKey("debts.id"), index=True)
+    amount: Mapped[Decimal] = mapped_column(Money)
+    interest: Mapped[Decimal] = mapped_column(Money)
+    principal: Mapped[Decimal] = mapped_column(Money)
+    date: Mapped[date] = mapped_column(Date)
+
+
+class SavingsGoal(Base):
+    __tablename__ = "savings_goals"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    target_amount: Mapped[Decimal] = mapped_column(Money)
+    current_amount: Mapped[Decimal] = mapped_column(Money, default=0)
+    target_date: Mapped[date] = mapped_column(Date)
+    annual_rate: Mapped[Decimal] = mapped_column(Numeric(8, 4), default=0)  # EA %, ej. CDT/cuenta de ahorro
