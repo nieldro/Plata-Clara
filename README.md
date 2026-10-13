@@ -43,7 +43,18 @@ frontend/src/pages/  Resumen, Movimientos, Deudas, Ahorro, Simulador
   si el pago no cubre el interés, avisa que la deuda nunca se salda.
 - Ahorro: aporte mensual para llegar a la meta considerando el rendimiento.
 
+## Cuentas y entidades
+- Catálogo de entidades colombianas en `backend/app/institutions.py`: bancos, billeteras y neobancos
+  (Nequi, Daviplata, Nu, Lulo…), inversión y pensiones (Hapi, Trii, Tyba, Skandia, Protección…),
+  y pagos/cripto. Para agregar una, basta una línea en esa lista.
+- Los logos salen del favicon de cada entidad (servicio gratuito de Google); si no carga, se muestra un monograma.
+- Si la entidad no está en la lista, se elige «Otra entidad o app» y se escribe el nombre.
+- Tipos de cuenta: ahorros, corriente, billetera digital, inversión, tarjeta de crédito y efectivo.
+- **Tarjeta de crédito:** al crearla se crea su deuda (tasa, cupo, pago mensual). Un gasto en la tarjeta sube la
+  deuda, un ingreso/abono la baja, y la proyección con intereses sale en «Deudas y tarjetas».
+
 ## Pendiente / siguientes pasos
+- Migraciones con Alembic: al cambiar columnas, las bases existentes no se actualizan solas (en desarrollo, borrar `dev.db`)
 - Migraciones con Alembic (hoy usa `create_all`)
 - Pruebas de API con base de datos de prueba
 - Gráficas (recharts), presupuestos por categoría, gastos recurrentes

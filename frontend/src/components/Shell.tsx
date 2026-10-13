@@ -11,7 +11,7 @@ import { Icons, Logo } from "./Icons";
 
 const TABS: { key: string; label: string; icon: ReactNode; page: () => JSX.Element }[] = [
   { key: "home", label: "Resumen", icon: Icons.home, page: Dashboard },
-  { key: "tx", label: "Movimientos", icon: Icons.swap, page: Transactions },
+  { key: "tx", label: "Cuentas y movimientos", icon: Icons.swap, page: Transactions },
   { key: "debts", label: "Deudas y tarjetas", icon: Icons.card, page: Debts },
   { key: "savings", label: "Ahorro", icon: Icons.target, page: Savings },
   { key: "sim", label: "Simulador", icon: Icons.calc, page: Simulator },

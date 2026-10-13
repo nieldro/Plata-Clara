@@ -138,6 +138,33 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal { width: 100%; max-width: 380px; margin: 0; padding: 36px; display: flex; flex-direction: column; gap: 12px; background: #121217; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
+/* ---------- cuentas y entidades ---------- */
+.logo-img { object-fit: contain; background: #f6f3ec; padding: 5px; flex: none; }
+.logo-mono { display: inline-grid; place-items: center; flex: none; font-weight: 600; font-family: var(--serif); background: rgba(255, 255, 255, 0.06); color: var(--gold-soft); border: 1px solid var(--line); }
+.acc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.acc { margin: 0; cursor: pointer; display: flex; flex-direction: column; gap: 10px; text-align: left; color: var(--text); font-weight: 400; border-radius: 18px; }
+.acc:hover { transform: translateY(-3px); box-shadow: none; }
+.acc.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.acc-top { display: flex; align-items: center; gap: 12px; }
+.acc-names { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.acc-names b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.acc-names small { text-transform: none; letter-spacing: 0; font-size: 12px; }
+.acc-bal { font-family: var(--serif); font-size: 32px; font-weight: 500; line-height: 1.1; }
+.acc.add { align-items: center; justify-content: center; border-style: dashed; background: none; min-height: 130px; text-align: center; }
+.acc.add span { font-size: 28px; color: var(--gold); line-height: 1; }
+.acc.add b { font-weight: 500; }
+.cell-acc { display: inline-flex; align-items: center; gap: 10px; }
+.card h2 .link { font-size: 13px; margin-left: 10px; font-family: var(--sans); }
+.modal.wide { max-width: 760px; max-height: 90vh; overflow-y: auto; }
+.inst-scroll { max-height: 260px; overflow-y: auto; padding-right: 4px; }
+.inst-cat { margin: 14px 0 8px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
+.inst-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.inst { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; border-radius: 12px; font-weight: 400; color: var(--text); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line); }
+.inst:hover { transform: none; box-shadow: none; border-color: rgba(201, 169, 106, 0.4); }
+.inst.on { border-color: var(--gold); background: rgba(201, 169, 106, 0.12); }
+.inst span { font-size: 13px; line-height: 1.2; }
+.modal-actions { justify-content: flex-end; }
+
 /* ---------- landing ---------- */
 .scrollbar { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 60; transform-origin: 0 50%; background: linear-gradient(90deg, var(--gold), var(--gold-soft)); }
 .lnav { position: fixed; top: 0; left: 0; right: 0; z-index: 40; display: flex; justify-content: space-between; align-items: center; padding: 20px clamp(20px, 5vw, 64px); transition: background 0.5s, padding 0.5s var(--ease), border-color 0.5s; border-bottom: 1px solid transparent; }

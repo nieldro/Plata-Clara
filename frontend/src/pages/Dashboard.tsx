@@ -27,7 +27,8 @@ export default function Dashboard() {
     api.get<Debt[]>("/debts").then(setDebts);
   }, [month]);
 
-  const cash = accounts.reduce((a, x) => a + Number(x.balance), 0);
+  // Las tarjetas ya cuentan como deuda (vía /debts); aquí solo el dinero propio.
+  const cash = accounts.filter((x) => x.type !== "credit_card").reduce((a, x) => a + Number(x.balance), 0);
   const owed = debts.reduce((a, x) => a + Number(x.current_balance), 0);
   const fmt = (n: number) => money(n);
 

@@ -21,6 +21,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const detail = err.detail;
+    if (Array.isArray(detail)) {
+      // errores de validación de FastAPI: [{msg: "Value error, ..."}]
+      throw new Error(detail.map((d) => String(d.msg ?? "").replace(/^Value error, /, "")).join(" · "));
+    }
     throw new Error(typeof detail === "string" ? detail : "Error en la solicitud");
   }
   return res.status === 204 ? (undefined as T) : res.json();
@@ -40,7 +44,26 @@ export const api = {
 };
 
 // --- tipos ---
-export type Account = { id: number; name: string; type: string; balance: number; currency: string };
+export type AccountType = "savings" | "checking" | "wallet" | "investment" | "credit_card" | "cash";
+export const ACCOUNT_TYPES: Record<AccountType, string> = {
+  savings: "Cuenta de ahorros",
+  checking: "Cuenta corriente",
+  wallet: "Billetera digital",
+  investment: "Inversión",
+  credit_card: "Tarjeta de crédito",
+  cash: "Efectivo",
+};
+
+export type Institution = { slug: string; name: string; category: string; domain: string; color: string };
+export type Account = {
+  id: number; name: string; type: AccountType; institution: string | null; institution_name: string | null;
+  currency: string; initial_balance: number | string; credit_limit: number | string | null;
+  debt_id: number | null; balance: number | string; available: number | string | null;
+};
+
+let institutionsCache: Promise<Institution[]> | null = null;
+/** Catálogo de entidades (se pide una sola vez). */
+export const loadInstitutions = () => (institutionsCache ??= api.get<Institution[]>("/institutions"));
 export type Category = { id: number; name: string; kind: "income" | "expense" };
 export type Tx = {
   id: number; account_id: number; category_id: number | null;

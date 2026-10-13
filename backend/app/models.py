@@ -19,14 +19,23 @@ class User(Base):
 
 
 class Account(Base):
-    """Cuenta de dinero: efectivo, banco, billetera."""
+    """Cuenta en una entidad: ahorros, corriente, billetera, inversión, tarjeta o efectivo.
+
+    `institution` es el slug del catálogo (institutions.py); si la entidad no está
+    listada se guarda el nombre libre en `institution_name`. Una tarjeta de crédito
+    queda ligada a una Debt (`debt_id`): sus gastos suben la deuda y los abonos la bajan.
+    """
     __tablename__ = "accounts"
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     name: Mapped[str] = mapped_column(String(100))
-    type: Mapped[str] = mapped_column(String(20), default="bank")  # cash | bank | wallet
+    type: Mapped[str] = mapped_column(String(20), default="savings")
+    institution: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    institution_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     initial_balance: Mapped[Decimal] = mapped_column(Money, default=0)
     currency: Mapped[str] = mapped_column(String(3), default="COP")
+    credit_limit: Mapped[Decimal | None] = mapped_column(Money, nullable=True)
+    debt_id: Mapped[int | None] = mapped_column(ForeignKey("debts.id"), nullable=True)
 
 
 class Category(Base):

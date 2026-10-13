@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import current_user, owned
-from ..models import Debt, DebtPayment, User
+from ..models import Account, Debt, DebtPayment, User
 from ..schemas import DebtIn, DebtOut, DebtPaymentIn, DebtPaymentOut
 from ..services import finance
 
@@ -30,6 +30,8 @@ def create_debt(data: DebtIn, db: Session = Depends(get_db), user: User = Depend
 @router.delete("/{debt_id}", status_code=204)
 def delete_debt(debt_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     debt = owned(db, Debt, debt_id, user)
+    if db.scalar(select(Account.id).where(Account.debt_id == debt.id)):
+        raise HTTPException(409, "Esta deuda es una tarjeta ligada a una cuenta: elimina la cuenta")
     db.query(DebtPayment).filter(DebtPayment.debt_id == debt.id).delete()
     db.delete(debt)
     db.commit()

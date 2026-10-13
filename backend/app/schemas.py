@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 RateType = Literal["EA", "MV", "NA"]
 
@@ -30,16 +30,43 @@ class TokenOut(BaseModel):
 
 
 # --- cuentas / categorías / movimientos ---
+AccountType = Literal["savings", "checking", "wallet", "investment", "credit_card", "cash"]
+
+
 class AccountIn(BaseModel):
-    name: str
-    type: Literal["cash", "bank", "wallet"] = "bank"
-    initial_balance: Decimal = Decimal(0)
+    name: str = Field(min_length=1, max_length=100)
+    type: AccountType = "savings"
+    institution: str | None = None  # slug del catálogo
+    institution_name: str | None = Field(default=None, max_length=100)  # entidad no listada
+    initial_balance: Decimal = Decimal(0)  # en tarjeta: deuda actual
     currency: str = "COP"
+    # solo tarjeta de crédito
+    credit_limit: Decimal | None = Field(default=None, gt=0)
+    rate: Decimal = Field(default=Decimal(0), ge=0)
+    rate_type: RateType = "EA"
+    monthly_payment: Decimal | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def _check(self):
+        if self.type != "cash" and not self.institution and not (self.institution_name or "").strip():
+            raise ValueError("Elige una entidad de la lista o escribe el nombre de la otra entidad")
+        if self.type == "credit_card" and self.initial_balance < 0:
+            raise ValueError("La deuda actual de la tarjeta no puede ser negativa")
+        return self
 
 
-class AccountOut(ORM, AccountIn):
+class AccountOut(ORM):
     id: int
-    balance: Decimal = Decimal(0)
+    name: str
+    type: AccountType
+    institution: str | None
+    institution_name: str | None
+    currency: str
+    initial_balance: Decimal
+    credit_limit: Decimal | None
+    debt_id: int | None
+    balance: Decimal = Decimal(0)  # en tarjeta: -deuda
+    available: Decimal | None = None  # en tarjeta: cupo - deuda
 
 
 class CategoryIn(BaseModel):
