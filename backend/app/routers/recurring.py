@@ -7,6 +7,7 @@ from ..deps import current_user, owned
 from ..models import Account, Category, Recurring, User
 from ..schemas import RecurringIn, RecurringOut
 from ..services import recurring as svc
+from ..services.notifications import notify_recurring
 
 router = APIRouter(prefix="/recurring", tags=["recurrentes"])
 
@@ -51,4 +52,5 @@ def delete_recurring(rec_id: int, db: Session = Depends(get_db), user: User = De
 def run(db: Session = Depends(get_db), user: User = Depends(current_user)):
     """Registra los movimientos recurrentes que ya vencieron. Se puede llamar las veces que sea."""
     created = svc.run_due(db, user.id)
+    notify_recurring(db, user.id, created)
     return {"created": len(created), "transaction_ids": [tx.id for _, tx in created]}

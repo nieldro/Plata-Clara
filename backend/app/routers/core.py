@@ -57,7 +57,7 @@ def list_accounts(db: Session = Depends(get_db), user: User = Depends(current_us
 def create_account(data: AccountIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
     if data.institution and data.institution not in SLUGS:
         raise HTTPException(422, "Entidad desconocida: usa el nombre libre para una entidad no listada")
-    fields = data.model_dump(exclude={"rate", "rate_type", "monthly_payment"})
+    fields = data.model_dump(exclude={"rate", "rate_type", "monthly_payment", "due_day"})
     if data.institution:
         fields["institution_name"] = None
     debt = None
@@ -67,7 +67,7 @@ def create_account(data: AccountIn, db: Session = Depends(get_db), user: User = 
             user_id=user.id, name=f"{entity} · {data.name}", kind="credit_card",
             original_amount=data.credit_limit or data.initial_balance,
             current_balance=data.initial_balance, rate=data.rate, rate_type=data.rate_type,
-            monthly_payment=data.monthly_payment,
+            monthly_payment=data.monthly_payment, due_day=data.due_day,
         )
         db.add(debt)
         db.flush()

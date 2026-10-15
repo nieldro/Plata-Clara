@@ -111,6 +111,20 @@ class Recurring(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class Notification(Base):
+    """Aviso para el usuario. `key` evita repetir el mismo aviso."""
+    __tablename__ = "notifications"
+    __table_args__ = (UniqueConstraint("user_id", "key"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))  # budget | due | goal | recurring
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str] = mapped_column(String(500), default="")
+    key: Mapped[str] = mapped_column(String(120))
+    read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class Budget(Base):
     """Tope mensual de gasto para una categoría."""
     __tablename__ = "budgets"

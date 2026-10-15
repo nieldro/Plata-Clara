@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -45,6 +45,7 @@ class AccountIn(BaseModel):
     rate: Decimal = Field(default=Decimal(0), ge=0)
     rate_type: RateType = "EA"
     monthly_payment: Decimal | None = Field(default=None, gt=0)
+    due_day: int | None = Field(default=None, ge=1, le=31)  # día de pago de la tarjeta
 
     @model_validator(mode="after")
     def _check(self):
@@ -119,6 +120,16 @@ class DebtPaymentOut(ORM):
     interest: Decimal
     principal: Decimal
     date: date
+
+
+# --- notificaciones ---
+class NotificationOut(ORM):
+    id: int
+    kind: str
+    title: str
+    body: str
+    read: bool
+    created_at: datetime
 
 
 # --- recurrentes ---
