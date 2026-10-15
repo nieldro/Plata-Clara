@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api, Category, money } from "../api";
+import RecurringSection from "../components/RecurringSection";
 import { EASE } from "../theme";
 
 type Item = { category_id: number; category: string; amount: number; spent: number; remaining: number; pct: number };
@@ -107,6 +108,8 @@ export default function Budgets() {
           </div>
         ))}
       </div>
+
+      <RecurringSection />
     </>
   );
 }

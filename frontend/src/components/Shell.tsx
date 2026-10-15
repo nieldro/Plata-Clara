@@ -22,8 +22,11 @@ const TABS: { key: string; label: string; icon: ReactNode; page: () => JSX.Eleme
 export default function Shell({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState(TABS[0].key);
   const [name, setName] = useState("");
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     api.get<{ name: string }>("/auth/me").then((u) => setName(u.name)).catch(() => {});
+    // Registra los recurrentes vencidos antes de pintar los datos.
+    api.post("/recurring/run").catch(() => {}).finally(() => setReady(true));
   }, []);
 
   const current = TABS.find((t) => t.key === tab)!;
@@ -61,7 +64,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.45, ease: EASE }}
           >
-            <Page />
+            {ready && <Page />}
           </motion.div>
         </AnimatePresence>
       </section>
