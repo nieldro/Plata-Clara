@@ -91,6 +91,15 @@ class TransactionIn(BaseModel):
 
 class TransactionOut(ORM, TransactionIn):
     id: int
+    transfer_id: str | None = None
+
+
+class TransferIn(BaseModel):
+    from_account_id: int
+    to_account_id: int
+    amount: Decimal = Field(gt=0)
+    date: date
+    note: str = Field(default="", max_length=255)
 
 
 # --- deudas ---

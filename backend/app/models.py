@@ -56,6 +56,8 @@ class Transaction(Base):
     amount: Mapped[Decimal] = mapped_column(Money)
     date: Mapped[date] = mapped_column(Date, index=True)
     note: Mapped[str] = mapped_column(String(255), default="")
+    # Las dos patas de una transferencia comparten este id; no cuentan como ingreso ni gasto.
+    transfer_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
 
 
 class Debt(Base):

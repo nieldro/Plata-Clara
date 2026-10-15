@@ -49,6 +49,43 @@ export default function Transactions() {
     }
   }
 
+  async function addTransfer(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const f = new FormData(form);
+    try {
+      await api.post("/transfers", {
+        from_account_id: Number(f.get("from")), to_account_id: Number(f.get("to")),
+        amount: Number(f.get("amount")), date: f.get("date"), note: f.get("note") ?? "",
+      });
+      form.reset();
+      setError("");
+      load();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function addCategory(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const f = new FormData(form);
+    try {
+      await api.post("/categories", { name: String(f.get("name")).trim(), kind: f.get("kind") });
+      form.reset();
+      setCats(await api.get("/categories"));
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function removeCategory(c: Category) {
+    if (!confirm(`¿Borrar la categoría «${c.name}»? Sus movimientos quedarán sin categoría.`)) return;
+    await api.del(`/categories/${c.id}`);
+    setCats(await api.get("/categories"));
+    load();
+  }
+
   async function removeAccount(a: Account) {
     const extra = a.type === "credit_card" ? " También se elimina la deuda de la tarjeta." : "";
     if (!confirm(`¿Eliminar «${a.name}» y todos sus movimientos?${extra}`)) return;
@@ -116,6 +153,44 @@ export default function Transactions() {
         {error && <p className="error">{error}</p>}
       </div>
 
+      {accounts.length >= 2 && (
+        <div className="card">
+          <h2>Transferir entre mis cuentas</h2>
+          <p className="empty">Útil para pagar una tarjeta desde tu banco o mover plata a tu billetera. No cuenta como gasto ni ingreso.</p>
+          <form className="row" onSubmit={addTransfer}>
+            <select name="from" required defaultValue="">
+              <option value="">Desde…</option>
+              {accounts.map((a) => <option key={a.id} value={a.id}>{entityName(a)} · {a.name}</option>)}
+            </select>
+            <select name="to" required defaultValue="">
+              <option value="">Hacia…</option>
+              {accounts.map((a) => <option key={a.id} value={a.id}>{entityName(a)} · {a.name}</option>)}
+            </select>
+            <input name="amount" type="number" step="0.01" min="0.01" placeholder="Monto" required />
+            <input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+            <input name="note" placeholder="Nota (opcional)" />
+            <button>Transferir</button>
+          </form>
+        </div>
+      )}
+
+      <div className="card">
+        <h2>Mis categorías</h2>
+        <div className="chips">
+          {cats.map((c) => (
+            <span key={c.id} className={`chip ${c.kind}`}>
+              {c.name}
+              <button className="link" title="Borrar" onClick={() => removeCategory(c)}>✕</button>
+            </span>
+          ))}
+        </div>
+        <form className="row" onSubmit={addCategory}>
+          <input name="name" placeholder="Nueva categoría (ej. Mascotas)" required maxLength={100} />
+          <select name="kind"><option value="expense">De gasto</option><option value="income">De ingreso</option></select>
+          <button>Agregar</button>
+        </form>
+      </div>
+
       <div className="card">
         <h2>
           Historial{filter && acc(filter) ? ` · ${acc(filter)!.name}` : ""}
@@ -135,7 +210,7 @@ export default function Transactions() {
                       {a ? `${entityName(a)} · ${a.name}` : "—"}
                     </span>
                   </td>
-                  <td>{catName(t.category_id)}</td><td>{t.note}</td>
+                  <td>{t.transfer_id ? "↔ Transferencia" : catName(t.category_id)}</td><td>{t.note}</td>
                   <td className={`num ${t.kind === "income" ? "pos" : "neg"}`}>
                     {t.kind === "income" ? "+" : "−"}{money(t.amount)}
                   </td>

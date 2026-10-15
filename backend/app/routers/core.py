@@ -1,3 +1,4 @@
+import uuid
 from datetime import date
 from decimal import Decimal
 
@@ -8,9 +9,9 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
-from ..models import Account, Category, Debt, DebtPayment, Transaction, User
+from ..models import Account, Budget, Category, Debt, DebtPayment, Recurring, Transaction, User
 from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
-                       TransactionIn, TransactionOut)
+                       TransactionIn, TransactionOut, TransferIn)
 from ..services.ledger import apply_to_card
 from ..services.queries import account_balances
 
@@ -98,6 +99,17 @@ def create_category(data: CategoryIn, db: Session = Depends(get_db), user: User 
     return cat
 
 
+@router.delete("/categories/{category_id}", status_code=204)
+def delete_category(category_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Borra una categoría; sus movimientos quedan «sin categoría» y se quitan sus presupuestos y recurrentes."""
+    cat = owned(db, Category, category_id, user)
+    db.query(Transaction).filter(Transaction.category_id == cat.id).update({Transaction.category_id: None})
+    db.query(Recurring).filter(Recurring.category_id == cat.id).update({Recurring.category_id: None})
+    db.query(Budget).filter(Budget.category_id == cat.id).delete()
+    db.delete(cat)
+    db.commit()
+
+
 # ---------- movimientos ----------
 @router.get("/transactions", response_model=list[TransactionOut])
 def list_transactions(
@@ -140,9 +152,30 @@ def create_transaction(data: TransactionIn, db: Session = Depends(get_db), user:
 @router.delete("/transactions/{tx_id}", status_code=204)
 def delete_transaction(tx_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     tx = owned(db, Transaction, tx_id, user)
-    apply_to_card(db, tx.account_id, tx.kind, tx.amount, -1)
-    db.delete(tx)
+    legs = [tx]
+    if tx.transfer_id:  # borrar una pata de una transferencia borra las dos
+        legs = list(db.scalars(select(Transaction).where(Transaction.transfer_id == tx.transfer_id,
+                                                         Transaction.user_id == user.id)))
+    for leg in legs:
+        apply_to_card(db, leg.account_id, leg.kind, leg.amount, -1)
+        db.delete(leg)
     db.commit()
+
+
+@router.post("/transfers", status_code=201)
+def create_transfer(data: TransferIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Mueve dinero entre dos cuentas tuyas. Si el destino es una tarjeta, baja su deuda (pago)."""
+    if data.from_account_id == data.to_account_id:
+        raise HTTPException(422, "Elige dos cuentas distintas")
+    owned(db, Account, data.from_account_id, user)
+    owned(db, Account, data.to_account_id, user)
+    tid = str(uuid.uuid4())
+    for account_id, kind in ((data.from_account_id, "expense"), (data.to_account_id, "income")):
+        db.add(Transaction(user_id=user.id, account_id=account_id, kind=kind, amount=data.amount,
+                           date=data.date, note=data.note or "Transferencia", transfer_id=tid))
+        apply_to_card(db, account_id, kind, data.amount, +1)
+    db.commit()
+    return {"transfer_id": tid}
 
 
 @router.get("/summary/trend")
@@ -159,7 +192,7 @@ def trend(months: int = Query(6, ge=1, le=24),
     start = date(first // 12, first % 12 + 1, 1)
     rows = db.execute(
         select(Transaction.date, Transaction.kind, Transaction.amount)
-        .where(Transaction.user_id == user.id, Transaction.date >= start)
+        .where(Transaction.user_id == user.id, Transaction.transfer_id.is_(None), Transaction.date >= start)
     ).all()
     for d, kind, amount in rows:
         key = f"{d.year}-{d.month:02d}"
@@ -175,7 +208,8 @@ def summary(month: str = Query(..., pattern=r"^\d{4}-\d{2}$"),
     year, mon = int(month[:4]), int(month[5:])
     start = date(year, mon, 1)
     end = date(year + (mon == 12), mon % 12 + 1, 1)
-    base = [Transaction.user_id == user.id, Transaction.date >= start, Transaction.date < end]
+    base = [Transaction.user_id == user.id, Transaction.transfer_id.is_(None),
+            Transaction.date >= start, Transaction.date < end]
     totals = dict(db.execute(
         select(Transaction.kind, func.sum(Transaction.amount)).where(*base).group_by(Transaction.kind)
     ).all())

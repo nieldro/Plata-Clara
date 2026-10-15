@@ -27,7 +27,7 @@ def spent_by_category(db: Session, user_id: int, start: date, end: date) -> dict
     rows = db.execute(
         select(Transaction.category_id, func.sum(Transaction.amount))
         .where(Transaction.user_id == user_id, Transaction.kind == "expense",
-               Transaction.date >= start, Transaction.date < end)
+               Transaction.transfer_id.is_(None), Transaction.date >= start, Transaction.date < end)
         .group_by(Transaction.category_id)
     ).all()
     return {cat: total for cat, total in rows}
@@ -38,7 +38,8 @@ def month_totals(db: Session, user_id: int, month: str) -> tuple[Decimal, Decima
     start, end = month_bounds(month)
     totals = dict(db.execute(
         select(Transaction.kind, func.sum(Transaction.amount))
-        .where(Transaction.user_id == user_id, Transaction.date >= start, Transaction.date < end)
+        .where(Transaction.user_id == user_id, Transaction.transfer_id.is_(None),
+               Transaction.date >= start, Transaction.date < end)
         .group_by(Transaction.kind)
     ).all())
     return totals.get("income") or Decimal(0), totals.get("expense") or Decimal(0)

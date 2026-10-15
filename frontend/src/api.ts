@@ -69,7 +69,7 @@ export const loadInstitutions = () => (institutionsCache ??= api.get<Institution
 export type Category = { id: number; name: string; kind: "income" | "expense" };
 export type Tx = {
   id: number; account_id: number; category_id: number | null;
-  kind: "income" | "expense"; amount: number; date: string; note: string;
+  kind: "income" | "expense"; amount: number; date: string; note: string; transfer_id?: string | null;
 };
 export type Debt = {
   id: number; name: string; kind: "credit_card" | "loan"; original_amount: number;
