@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.db import Base, get_db
+from app.db import Base, get_db, make_sqlite_unicode_aware
 from app.main import app
 
 
@@ -18,6 +18,7 @@ from app.main import app
 def client():
     """Cliente de la API sobre una base SQLite en memoria, nueva en cada prueba."""
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    make_sqlite_unicode_aware(engine)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, autoflush=False)
 

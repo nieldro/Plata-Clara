@@ -2,8 +2,10 @@ import uuid
 from datetime import date
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -117,23 +119,53 @@ def list_transactions(
     date_to: date | None = None,
     account_id: int | None = None,
     category_id: int | None = None,
-    kind: str | None = None,
-    limit: int = Query(200, le=1000),
+    kind: Literal["income", "expense"] | None = None,
+    q: str | None = Query(None, max_length=100, description="Texto en la nota o en el nombre de la categoría"),
+    min_amount: Decimal | None = Query(None, ge=0),
+    max_amount: Decimal | None = Query(None, ge=0),
+    uncategorized: bool = False,
+    hide_transfers: bool = False,
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    response: Response = None,
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
-    q = select(Transaction).where(Transaction.user_id == user.id)
+    """Historial con filtros combinables. El total sin paginar va en la cabecera X-Total-Count."""
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(422, "La fecha inicial no puede ser posterior a la final")
+    if min_amount is not None and max_amount is not None and min_amount > max_amount:
+        raise HTTPException(422, "El monto mínimo no puede superar al máximo")
+
+    conds = [Transaction.user_id == user.id]
     if date_from:
-        q = q.where(Transaction.date >= date_from)
+        conds.append(Transaction.date >= date_from)
     if date_to:
-        q = q.where(Transaction.date <= date_to)
+        conds.append(Transaction.date <= date_to)
     if account_id:
-        q = q.where(Transaction.account_id == account_id)
+        conds.append(Transaction.account_id == account_id)
     if category_id:
-        q = q.where(Transaction.category_id == category_id)
+        conds.append(Transaction.category_id == category_id)
+    if uncategorized:
+        conds.append(Transaction.category_id.is_(None))
     if kind:
-        q = q.where(Transaction.kind == kind)
-    return db.scalars(q.order_by(Transaction.date.desc(), Transaction.id.desc()).limit(limit)).all()
+        conds.append(Transaction.kind == kind)
+    if min_amount is not None:
+        conds.append(Transaction.amount >= min_amount)
+    if max_amount is not None:
+        conds.append(Transaction.amount <= max_amount)
+    if hide_transfers:
+        conds.append(Transaction.transfer_id.is_(None))
+    if q and q.strip():
+        like = f"%{q.strip().lower()}%"
+        by_category = select(Category.id).where(Category.user_id == user.id, func.lower(Category.name).like(like))
+        conds.append(or_(func.lower(Transaction.note).like(like), Transaction.category_id.in_(by_category)))
+
+    total = db.scalar(select(func.count()).select_from(Transaction).where(*conds))
+    if response is not None:
+        response.headers["X-Total-Count"] = str(total)
+    stmt = select(Transaction).where(*conds).order_by(Transaction.date.desc(), Transaction.id.desc())
+    return db.scalars(stmt.limit(limit).offset(offset)).all()
 
 
 @router.post("/transactions", response_model=TransactionOut, status_code=201)
