@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useEffect, useState } from "react";
 import { api } from "../api";
+import Budgets from "../pages/Budgets";
 import Dashboard from "../pages/Dashboard";
 import Debts from "../pages/Debts";
 import Savings from "../pages/Savings";
@@ -12,6 +13,7 @@ import { Icons, Logo } from "./Icons";
 const TABS: { key: string; label: string; icon: ReactNode; page: () => JSX.Element }[] = [
   { key: "home", label: "Resumen", icon: Icons.home, page: Dashboard },
   { key: "tx", label: "Cuentas y movimientos", icon: Icons.swap, page: Transactions },
+  { key: "budgets", label: "Presupuestos", icon: Icons.pie, page: Budgets },
   { key: "debts", label: "Deudas y tarjetas", icon: Icons.card, page: Debts },
   { key: "savings", label: "Ahorro", icon: Icons.target, page: Savings },
   { key: "sim", label: "Simulador", icon: Icons.calc, page: Simulator },
