@@ -3,22 +3,24 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, money, Tx } from "../api";
 import AccountModal from "../components/AccountModal";
 import EditTransactionModal from "../components/EditTransactionModal";
+import TransactionHistory from "../components/TransactionHistory";
 import InstitutionLogo from "../components/InstitutionLogo";
 
 export default function Transactions() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
-  const [txs, setTxs] = useState<Tx[]>([]);
   const [insts, setInsts] = useState<Institution[]>([]);
   const [filter, setFilter] = useState<number | null>(null);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Tx | null>(null);
   const [error, setError] = useState("");
 
+  const [version, setVersion] = useState(0); // al cambiar, el historial se vuelve a pedir
+
   const load = useCallback(async () => {
     setAccounts(await api.get("/accounts"));
-    setTxs(await api.get(`/transactions${filter ? `?account_id=${filter}` : ""}`));
-  }, [filter]);
+    setVersion((v) => v + 1);
+  }, []);
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
     loadInstitutions().then(setInsts);
@@ -193,40 +195,10 @@ export default function Transactions() {
         </form>
       </div>
 
-      <div className="card">
-        <h2>
-          Historial{filter && acc(filter) ? ` · ${acc(filter)!.name}` : ""}
-          {filter && <button className="link" onClick={() => setFilter(null)}>Ver todas</button>}
-        </h2>
-        <table>
-          <thead><tr><th>Fecha</th><th>Cuenta</th><th>Categoría</th><th>Nota</th><th className="num">Monto</th><th /></tr></thead>
-          <tbody>
-            {txs.map((t) => {
-              const a = acc(t.account_id);
-              return (
-                <tr key={t.id}>
-                  <td>{t.date}</td>
-                  <td>
-                    <span className="cell-acc">
-                      {a && <InstitutionLogo inst={instOf(a)} name={entityName(a)} size={26} />}
-                      {a ? `${entityName(a)} · ${a.name}` : "—"}
-                    </span>
-                  </td>
-                  <td>{t.transfer_id ? "↔ Transferencia" : catName(t.category_id)}</td><td>{t.note}</td>
-                  <td className={`num ${t.kind === "income" ? "pos" : "neg"}`}>
-                    {t.kind === "income" ? "+" : "−"}{money(t.amount)}
-                  </td>
-                  <td className="actions">
-                    {!t.transfer_id && <button className="link" title="Editar" onClick={() => setEditing(t)}>✎</button>}
-                    <button className="link" title="Borrar" onClick={() => api.del(`/transactions/${t.id}`).then(load)}>✕</button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {txs.length === 0 && <p className="empty">Sin movimientos todavía.</p>}
-      </div>
+      <TransactionHistory
+        accounts={accounts} cats={cats} insts={insts} accountFilter={filter} version={version}
+        onEdit={setEditing} onChanged={load} onClearAccount={() => setFilter(null)}
+      />
 
       <AnimatePresence>
         {editing && (

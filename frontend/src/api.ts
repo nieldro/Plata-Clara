@@ -7,7 +7,7 @@ export const setToken = (t: string | null) =>
 export const money = (n: number | string) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(n));
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function send(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -27,11 +27,24 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     }
     throw new Error(typeof detail === "string" ? detail : "Error en la solicitud");
   }
+  return res;
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await send(path, init);
   return res.status === 204 ? (undefined as T) : res.json();
+}
+
+/** Lista paginada: el total sin paginar viene en la cabecera X-Total-Count. */
+export async function getPage<T>(path: string): Promise<{ items: T[]; total: number }> {
+  const res = await send(path);
+  const items = (await res.json()) as T[];
+  return { items, total: Number(res.headers.get("X-Total-Count") ?? items.length) };
 }
 
 export const api = {
   get: <T,>(p: string) => request<T>(p),
+  upload: <T,>(p: string, form: FormData) => request<T>(p, { method: "POST", body: form }),
   post: <T,>(p: string, body?: unknown) => request<T>(p, { method: "POST", body: JSON.stringify(body ?? {}) }),
   put: <T,>(p: string, body?: unknown) => request<T>(p, { method: "PUT", body: JSON.stringify(body ?? {}) }),
   patch: <T,>(p: string, body?: unknown) => request<T>(p, { method: "PATCH", body: JSON.stringify(body ?? {}) }),

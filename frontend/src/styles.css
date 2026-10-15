@@ -139,6 +139,11 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.filters input, .filters select { flex: 0 1 160px; min-width: 0; }
+.filters .grow { flex: 1 1 260px; }
+.summary-line { margin: 4px 0 10px; color: var(--muted); font-size: 13px; }
+.table-wrap { overflow-x: auto; }
 
 /* ---------- categorías ---------- */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
