@@ -57,7 +57,45 @@ def read_csv(data: bytes) -> list[list[str]]:
     return [[c.strip() for c in row] for row in reader]
 
 
-READERS = {".csv": read_csv, ".txt": read_csv, ".tsv": read_csv}
+def _xlsx_cell(v):
+    """Celdas de Excel → algo que el parser entiende. Los números se pasan con 2 decimales para que
+    1234.567 no se lea como «1.234.567»; las fechas se conservan como fecha."""
+    if v is None:
+        return ""
+    if isinstance(v, (_dt.datetime, _dt.date)):
+        return v
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, (int, float, Decimal)):
+        return format(Decimal(str(v)).quantize(Decimal("0.01")), "f")
+    return str(v).strip()
+
+
+def read_xlsx(data: bytes) -> list[list]:
+    if not data.startswith(b"PK\x03\x04"):
+        raise ImportError_("Ese archivo no es un Excel (.xlsx) válido. Los .xls antiguos no se soportan: guárdalo como .xlsx o CSV")
+    try:
+        from openpyxl import load_workbook
+
+        wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        rows: list[list] = []
+        for ws in wb.worksheets:  # la primera hoja que tenga datos
+            for i, row in enumerate(ws.iter_rows(values_only=True)):
+                if i >= MAX_ROWS + HEADER_SCAN_ROWS + 50:
+                    raise ImportError_(f"La hoja tiene más de {MAX_ROWS} filas; divídela por meses")
+                rows.append([_xlsx_cell(c) for c in row])
+            if any(any(str(c).strip() for c in r) for r in rows):
+                break
+            rows = []
+        wb.close()
+    except ImportError_:
+        raise
+    except Exception as e:  # zip corrupto, hoja protegida, etc.
+        raise ImportError_("No se pudo leer el Excel: el archivo parece dañado o protegido") from e
+    return rows
+
+
+READERS = {".csv": read_csv, ".txt": read_csv, ".tsv": read_csv, ".xlsx": read_xlsx}
 
 
 def read_table(filename: str, data: bytes) -> list[list[str]]:
