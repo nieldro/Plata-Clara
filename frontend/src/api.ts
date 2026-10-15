@@ -88,7 +88,7 @@ export type Category = { id: number; name: string; kind: "income" | "expense" };
 export type Tx = {
   id: number; account_id: number; category_id: number | null;
   kind: "income" | "expense"; amount: number; date: string; note: string; transfer_id?: string | null;
-  tags: string[]; attachments: number;
+  tags: string[]; attachments: number; loan_id?: number | null;
 };
 export type Attachment = { id: number; filename: string; content_type: string; size: number; created_at: string };
 export type TagSummary = { id: number; name: string; count: number; income: number | string; expense: number | string };

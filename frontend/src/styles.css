@@ -139,6 +139,13 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.block { display: block; }
+.loan { border-top: 1px solid var(--line); }
+.loan:first-of-type { border-top: 0; }
+.loan-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 4px; cursor: pointer; transition: background 0.3s; }
+.loan-head:hover { background: rgba(255, 255, 255, 0.025); }
+.loan-head .num b { font-family: var(--serif); font-size: 22px; font-weight: 500; }
+.loan-body { padding: 0 4px 16px; }
 .link.has-files { color: var(--gold-soft); }
 .link sup { font-size: 10px; margin-left: 1px; }
 .receipts { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin: 14px 0; }

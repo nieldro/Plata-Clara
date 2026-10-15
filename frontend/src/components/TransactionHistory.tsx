@@ -146,7 +146,7 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
                       {a ? `${entityName(a)} · ${a.name}` : "—"}
                     </span>
                   </td>
-                  <td>{t.transfer_id ? "↔ Transferencia" : catName(t.category_id)}</td>
+                  <td>{t.transfer_id ? "↔ Transferencia" : t.loan_id ? "🤝 Préstamo" : catName(t.category_id)}</td>
                   <td>
                     {t.note}
                     {t.tags.map((g) => <span className="tagchip mini" key={g}>#{g}</span>)}
@@ -158,8 +158,10 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
                         📎{t.attachments > 0 && <sup>{t.attachments}</sup>}
                       </button>
                     )}
-                    {!t.transfer_id && <button className="link" title="Editar" onClick={() => onEdit(t)}>✎</button>}
-                    <button className="link" title="Borrar" onClick={() => api.del(`/transactions/${t.id}`).then(onChanged)}>✕</button>
+                    {!t.transfer_id && !t.loan_id && <button className="link" title="Editar" onClick={() => onEdit(t)}>✎</button>}
+                    {t.loan_id
+                      ? <small title="Se gestiona desde «Quién me debe»">en Préstamos</small>
+                      : <button className="link" title="Borrar" onClick={() => api.del(`/transactions/${t.id}`).then(onChanged)}>✕</button>}
                   </td>
                 </tr>
               );
