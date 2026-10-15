@@ -139,6 +139,24 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.dropzone { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 14px 0; padding: 34px 16px; text-align: center; cursor: pointer; border: 1px dashed rgba(201, 169, 106, 0.4); border-radius: 16px; transition: background 0.3s, border-color 0.3s; }
+.dropzone:hover, .dropzone.over { background: rgba(201, 169, 106, 0.07); border-color: var(--gold); }
+.dropzone b { font-family: var(--serif); font-size: 24px; font-weight: 500; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); flex-direction: row !important; }
+.check input { accent-color: var(--gold); }
+.ok-msg { margin: 12px 0 0; color: var(--pos); }
+.table-wrap.tall { max-height: 460px; overflow: auto; margin: 10px 0; }
+.table-wrap select { max-width: 190px; padding: 6px 8px; font-size: 13px; }
+.row-bad { background: rgba(229, 138, 138, 0.06); }
+.row-off { opacity: 0.45; }
+.error.small { font-size: 12px; }
+.badge-state { font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; border: 1px solid var(--line); }
+.badge-state.bad { color: var(--neg); border-color: rgba(229, 138, 138, 0.4); }
+.badge-state.dup { color: var(--muted); }
+.badge-state.maybe { color: #f0c36b; border-color: rgba(240, 195, 107, 0.4); }
+.import-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+details.cols { margin: 8px 0; color: var(--muted); font-size: 13px; }
+details.cols summary { cursor: pointer; }
 .hint { margin: 10px 0 0; font-size: 13px; color: var(--gold-soft); }
 .taginput { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1 1 220px; padding: 4px 8px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); }
 .taginput:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201, 169, 106, 0.15); }

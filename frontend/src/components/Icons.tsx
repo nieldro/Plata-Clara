@@ -19,6 +19,12 @@ export const Icons = {
   calc: (
     <svg {...base}><rect x="4" y="2" width="16" height="20" rx="2.5" /><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2" /></svg>
   ),
+  upload: (
+    <svg {...base}><path d="M12 16V4M7 9l5-5 5 5M4 20h16" /></svg>
+  ),
+  users: (
+    <svg {...base}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2 .6 3.5 2.5 3.5 5.5" /></svg>
+  ),
   pie: (
     <svg {...base}><circle cx="12" cy="12" r="9" /><path d="M12 3v9h9" /></svg>
   ),
