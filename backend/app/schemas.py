@@ -146,6 +146,12 @@ class DebtPaymentOut(ORM):
     date: date
 
 
+# --- reglas de categorización ---
+class RuleIn(BaseModel):
+    keyword: str = Field(min_length=1, max_length=60)
+    category_id: int
+
+
 # --- notificaciones ---
 class NotificationOut(ORM):
     id: int

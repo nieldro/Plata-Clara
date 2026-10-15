@@ -11,12 +11,13 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
-from ..models import (Account, Budget, Category, Debt, DebtPayment, Recurring, Tag, Transaction, User,
-                      transaction_tags)
+from ..models import (Account, Budget, Category, CategoryRule, Debt, DebtPayment, Recurring, Tag, Transaction,
+                      User, transaction_tags)
 from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
                        TransactionIn, TransactionOut, TransactionUpdate, TransferIn)
 from ..services.ledger import apply_to_card
 from ..services.queries import account_balances
+from ..services.rules import learn
 from ..services.tags import normalize, set_tags
 
 router = APIRouter(tags=["movimientos"])
@@ -110,6 +111,7 @@ def delete_category(category_id: int, db: Session = Depends(get_db), user: User 
     db.query(Transaction).filter(Transaction.category_id == cat.id).update({Transaction.category_id: None})
     db.query(Recurring).filter(Recurring.category_id == cat.id).update({Recurring.category_id: None})
     db.query(Budget).filter(Budget.category_id == cat.id).delete()
+    db.query(CategoryRule).filter(CategoryRule.category_id == cat.id).delete()
     db.delete(cat)
     db.commit()
 
@@ -183,6 +185,7 @@ def create_transaction(data: TransactionIn, db: Session = Depends(get_db), user:
     tx = Transaction(user_id=user.id, **data.model_dump(exclude={"tags"}))
     db.add(tx)
     set_tags(db, user.id, tx, data.tags)
+    learn(db, user.id, tx.note, tx.category_id)
     apply_to_card(db, tx.account_id, tx.kind, tx.amount, +1)
     db.commit()
     db.refresh(tx)
@@ -210,6 +213,8 @@ def update_transaction(tx_id: int, data: TransactionUpdate,
         tx.category_id = None
     if data.tags is not None:
         set_tags(db, user.id, tx, data.tags)
+    if changes.get("category_id") or changes.get("note"):
+        learn(db, user.id, tx.note, tx.category_id)
     apply_to_card(db, tx.account_id, tx.kind, tx.amount, +1)
     db.commit()
     db.refresh(tx)

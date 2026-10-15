@@ -81,6 +81,18 @@ class Tag(Base):
     name: Mapped[str] = mapped_column(String(30))
 
 
+class CategoryRule(Base):
+    """Palabra clave → categoría. Se aprende de tus movimientos (hits) o la creas tú (manual)."""
+    __tablename__ = "category_rules"
+    __table_args__ = (UniqueConstraint("user_id", "keyword", "category_id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    keyword: Mapped[str] = mapped_column(String(40), index=True)  # sin tildes y en minúsculas
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
+    hits: Mapped[int] = mapped_column(default=1)
+    manual: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class Debt(Base):
     """Tarjeta de crédito o crédito (libre inversión, vehículo, hipotecario...)."""
     __tablename__ = "debts"
