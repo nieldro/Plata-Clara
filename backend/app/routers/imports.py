@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..config import settings
 from ..db import get_db
 from ..deps import current_user, owned
 from ..models import Account, Category, Transaction, User
@@ -14,6 +13,7 @@ from ..services import importer
 from ..services.ledger import apply_to_card
 from ..services.rules import fold, learn, suggest
 from ..services.tags import set_tags
+from ..services.uploads import read_limited
 
 router = APIRouter(prefix="/imports", tags=["importar"])
 
@@ -66,14 +66,6 @@ def _mapping_from_form(values: dict[str, int | None], detected: dict[str, int | 
     return detected
 
 
-async def _read_upload(file: UploadFile) -> bytes:
-    limit = settings.max_upload_mb * 1024 * 1024
-    data = await file.read(limit + 1)
-    if len(data) > limit:
-        raise HTTPException(413, f"El archivo supera los {settings.max_upload_mb} MB")
-    return data
-
-
 @router.post("/preview")
 async def preview(
     file: UploadFile = File(...),
@@ -91,7 +83,7 @@ async def preview(
 ):
     """Lee el extracto y muestra qué movimientos crearía. No guarda nada."""
     owned(db, Account, account_id, user)
-    data = await _read_upload(file)
+    data = await read_limited(file)
     try:
         table = importer.read_table(file.filename or "", data)
     except importer.ImportError_ as e:

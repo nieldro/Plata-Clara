@@ -5,20 +5,21 @@ from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
-from ..models import (Account, Budget, Category, CategoryRule, Debt, DebtPayment, Recurring, Tag, Transaction,
-                      User, transaction_tags)
+from ..models import (Account, Attachment, Budget, Category, CategoryRule, Debt, DebtPayment, Recurring, Tag,
+                      Transaction, User, transaction_tags)
 from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
                        TransactionIn, TransactionOut, TransactionUpdate, TransferIn)
 from ..services.ledger import apply_to_card
 from ..services.queries import account_balances
 from ..services.rules import learn
 from ..services.tags import normalize, set_tags
+from ..services.uploads import purge_files_for
 
 router = APIRouter(tags=["movimientos"])
 
@@ -79,7 +80,14 @@ def create_account(data: AccountIn, db: Session = Depends(get_db), user: User = 
 @router.delete("/accounts/{account_id}", status_code=204)
 def delete_account(account_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     acc = owned(db, Account, account_id, user)
+    tx_ids = list(db.scalars(select(Transaction.id).where(Transaction.account_id == acc.id)))
+    purge_files_for(db, user.id, tx_ids)
+    for part in range(0, len(tx_ids), 400):  # en trozos: SQLite limita las variables por consulta
+        chunk = tx_ids[part:part + 400]
+        db.execute(delete(transaction_tags).where(transaction_tags.c.transaction_id.in_(chunk)))
+        db.execute(delete(Attachment).where(Attachment.transaction_id.in_(chunk)))
     db.query(Transaction).filter(Transaction.account_id == acc.id).delete()
+    db.query(Recurring).filter(Recurring.account_id == acc.id).delete()
     debt_id = acc.debt_id
     db.delete(acc)
     if debt_id:
@@ -228,6 +236,7 @@ def delete_transaction(tx_id: int, db: Session = Depends(get_db), user: User = D
     if tx.transfer_id:  # borrar una pata de una transferencia borra las dos
         legs = list(db.scalars(select(Transaction).where(Transaction.transfer_id == tx.transfer_id,
                                                          Transaction.user_id == user.id)))
+    purge_files_for(db, user.id, [leg.id for leg in legs])
     for leg in legs:
         apply_to_card(db, leg.account_id, leg.kind, leg.amount, -1)
         db.delete(leg)

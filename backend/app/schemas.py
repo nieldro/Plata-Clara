@@ -94,6 +94,7 @@ class TransactionOut(ORM, TransactionIn):
     id: int
     transfer_id: str | None = None
     tags: list[str] = Field(default_factory=list, validation_alias="tag_names")
+    attachments: int = Field(default=0, validation_alias="attachment_count")
 
 
 class TransactionUpdate(BaseModel):

@@ -68,10 +68,28 @@ class Transaction(Base):
     # Huella del renglón de un extracto importado; evita importar dos veces el mismo movimiento.
     import_hash: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
     tags: Mapped[list["Tag"]] = relationship(secondary=transaction_tags, lazy="selectin")
+    attachments: Mapped[list["Attachment"]] = relationship(lazy="selectin", cascade="all, delete-orphan")
 
     @property
     def tag_names(self) -> list[str]:
         return sorted(t.name for t in self.tags)
+
+    @property
+    def attachment_count(self) -> int:
+        return len(self.attachments)
+
+
+class Attachment(Base):
+    """Foto o PDF de un recibo. El archivo vive en disco con un nombre generado (nunca el del usuario)."""
+    __tablename__ = "attachments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id"), index=True)
+    filename: Mapped[str] = mapped_column(String(100))  # solo para mostrar
+    stored_name: Mapped[str] = mapped_column(String(60))  # uuid + extensión
+    content_type: Mapped[str] = mapped_column(String(40))
+    size: Mapped[int] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class Tag(Base):
