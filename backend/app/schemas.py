@@ -1,3 +1,4 @@
+import datetime as _dt  # para campos llamados «date» con valor por defecto (si no, tapan el tipo)
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
@@ -173,8 +174,25 @@ class GoalOut(ORM, GoalIn):
     id: int
 
 
+class GoalUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    target_amount: Decimal | None = Field(default=None, gt=0)
+    target_date: date | None = None
+    annual_rate: Decimal | None = Field(default=None, ge=0)
+
+
 class ContributionIn(BaseModel):
     amount: Decimal = Field(gt=0)
+    kind: Literal["deposit", "withdraw"] = "deposit"
+    date: _dt.date | None = None  # hoy por defecto
+    note: str = Field(default="", max_length=255)
+
+
+class ContributionOut(ORM):
+    id: int
+    amount: Decimal  # positivo = aporte, negativo = retiro
+    date: date
+    note: str
 
 
 # --- simulador ---

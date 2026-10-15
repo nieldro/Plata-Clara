@@ -95,6 +95,16 @@ class SavingsGoal(Base):
     annual_rate: Mapped[Decimal] = mapped_column(Numeric(8, 4), default=0)  # EA %, ej. CDT/cuenta de ahorro
 
 
+class SavingsContribution(Base):
+    """Aporte (+) o retiro (−) de una meta. El dinero sigue en tus cuentas: la meta solo lo aparta."""
+    __tablename__ = "savings_contributions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    goal_id: Mapped[int] = mapped_column(ForeignKey("savings_goals.id"), index=True)
+    amount: Mapped[Decimal] = mapped_column(Money)
+    date: Mapped[date] = mapped_column(Date)
+    note: Mapped[str] = mapped_column(String(255), default="")
+
+
 class Recurring(Base):
     """Movimiento que se repite (arriendo, suscripciones, nómina...)."""
     __tablename__ = "recurring"
