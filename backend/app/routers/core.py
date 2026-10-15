@@ -11,7 +11,7 @@ from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
 from ..models import Account, Budget, Category, Debt, DebtPayment, Recurring, Transaction, User
 from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
-                       TransactionIn, TransactionOut, TransferIn)
+                       TransactionIn, TransactionOut, TransactionUpdate, TransferIn)
 from ..services.ledger import apply_to_card
 from ..services.queries import account_balances
 
@@ -143,6 +143,31 @@ def create_transaction(data: TransactionIn, db: Session = Depends(get_db), user:
         owned(db, Category, data.category_id, user)
     tx = Transaction(user_id=user.id, **data.model_dump())
     db.add(tx)
+    apply_to_card(db, tx.account_id, tx.kind, tx.amount, +1)
+    db.commit()
+    db.refresh(tx)
+    return tx
+
+
+@router.patch("/transactions/{tx_id}", response_model=TransactionOut)
+def update_transaction(tx_id: int, data: TransactionUpdate,
+                       db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Edita un movimiento. Si afecta una tarjeta, su deuda se recalcula (revierte lo viejo y aplica lo nuevo)."""
+    tx = owned(db, Transaction, tx_id, user)
+    if tx.transfer_id:
+        raise HTTPException(422, "Las transferencias no se editan: bórrala y créala de nuevo")
+    changes = data.model_dump(exclude_unset=True, exclude={"clear_category"})
+    if "account_id" in changes and changes["account_id"] is not None:
+        owned(db, Account, changes["account_id"], user)
+    if changes.get("category_id"):
+        owned(db, Category, changes["category_id"], user)
+
+    apply_to_card(db, tx.account_id, tx.kind, tx.amount, -1)
+    for field in ("account_id", "category_id", "kind", "amount", "date", "note"):
+        if changes.get(field) is not None:
+            setattr(tx, field, changes[field])
+    if data.clear_category:
+        tx.category_id = None
     apply_to_card(db, tx.account_id, tx.kind, tx.amount, +1)
     db.commit()
     db.refresh(tx)

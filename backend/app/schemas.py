@@ -94,6 +94,17 @@ class TransactionOut(ORM, TransactionIn):
     transfer_id: str | None = None
 
 
+class TransactionUpdate(BaseModel):
+    """Cambios parciales: solo se modifica lo que se envía."""
+    account_id: int | None = None
+    category_id: int | None = None
+    clear_category: bool = False  # para dejarla «sin categoría» (category_id=None significa «no cambiar»)
+    kind: Literal["income", "expense"] | None = None
+    amount: Decimal | None = Field(default=None, gt=0)
+    date: _dt.date | None = None
+    note: str | None = Field(default=None, max_length=255)
+
+
 class TransferIn(BaseModel):
     from_account_id: int
     to_account_id: int
