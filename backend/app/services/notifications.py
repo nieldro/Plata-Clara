@@ -6,7 +6,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Debt, Notification, SavingsGoal, Transaction
+from ..models import Debt, Loan, Notification, SavingsGoal, Transaction
 from .queries import budget_rows
 
 DUE_WARNING_DAYS = 3
@@ -85,10 +85,35 @@ def _goal_alerts(db: Session, user_id: int, today: date) -> int:
     return n
 
 
+def _loan_alerts(db: Session, user_id: int, today: date) -> int:
+    from .loans import paid_amounts  # import local: loans importa de aquí indirectamente en el futuro
+
+    n = 0
+    loans = list(db.scalars(select(Loan).where(Loan.user_id == user_id, Loan.due_date.is_not(None))))
+    paid = paid_amounts(db, [l.id for l in loans])
+    for l in loans:
+        left = l.amount - (paid.get(l.id) or 0)
+        if left <= 0:
+            continue
+        days = (l.due_date - today).days
+        if days > DUE_WARNING_DAYS:
+            continue
+        who = f"{l.person} te debe {cop(left)}" if l.direction == "lent" else f"Le debes {cop(left)} a {l.person}"
+        if days < 0:
+            n += _add(db, user_id, f"loan:{l.id}:{l.due_date.isoformat()}:late", "loan",
+                      f"Préstamo vencido: {l.person}", f"{who}. Venció el {l.due_date.isoformat()}.")
+        else:
+            when = "hoy" if days == 0 else f"en {days} día{'s' if days != 1 else ''}"
+            n += _add(db, user_id, f"loan:{l.id}:{l.due_date.isoformat()}:soon", "loan",
+                      f"Vence {when} el préstamo con {l.person}", f"{who}.")
+    return n
+
+
 def generate(db: Session, user_id: int, today: date | None = None) -> int:
     """Crea los avisos que correspondan hoy. Devuelve cuántos avisos nuevos hubo."""
     today = today or date.today()
-    n = _budget_alerts(db, user_id, today) + _due_alerts(db, user_id, today) + _goal_alerts(db, user_id, today)
+    n = (_budget_alerts(db, user_id, today) + _due_alerts(db, user_id, today) + _goal_alerts(db, user_id, today)
+         + _loan_alerts(db, user_id, today))
     db.commit()
     return n
 

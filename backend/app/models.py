@@ -1,3 +1,4 @@
+import datetime as _dt
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -67,6 +68,8 @@ class Transaction(Base):
     transfer_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     # Huella del renglón de un extracto importado; evita importar dos veces el mismo movimiento.
     import_hash: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    # Movimiento de un préstamo (prestar o cobrar): mueve el saldo, pero no es gasto ni ingreso del mes.
+    loan_id: Mapped[int | None] = mapped_column(ForeignKey("loans.id"), nullable=True, index=True)
     tags: Mapped[list["Tag"]] = relationship(secondary=transaction_tags, lazy="selectin")
     attachments: Mapped[list["Attachment"]] = relationship(lazy="selectin", cascade="all, delete-orphan")
 
@@ -90,6 +93,29 @@ class Attachment(Base):
     content_type: Mapped[str] = mapped_column(String(40))
     size: Mapped[int] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class Loan(Base):
+    """Plata que le prestaste a alguien (lent) o que alguien te prestó (borrowed), sin intereses."""
+    __tablename__ = "loans"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    person: Mapped[str] = mapped_column(String(100))
+    direction: Mapped[str] = mapped_column(String(10))  # lent = me deben | borrowed = debo
+    amount: Mapped[Decimal] = mapped_column(Money)
+    date: Mapped[date] = mapped_column(Date)
+    due_date: Mapped[_dt.date | None] = mapped_column(Date, nullable=True)  # _dt: el campo «date» de arriba tapa al tipo
+    note: Mapped[str] = mapped_column(String(255), default="")
+
+
+class LoanPayment(Base):
+    __tablename__ = "loan_payments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    loan_id: Mapped[int] = mapped_column(ForeignKey("loans.id"), index=True)
+    amount: Mapped[Decimal] = mapped_column(Money)
+    date: Mapped[date] = mapped_column(Date)
+    note: Mapped[str] = mapped_column(String(255), default="")
+    transaction_id: Mapped[int | None] = mapped_column(ForeignKey("transactions.id"), nullable=True)
 
 
 class Tag(Base):

@@ -5,14 +5,14 @@ from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
-from ..models import (Account, Attachment, Budget, Category, CategoryRule, Debt, DebtPayment, Recurring, Tag,
-                      Transaction, User, transaction_tags)
+from ..models import (Account, Attachment, Budget, Category, CategoryRule, Debt, DebtPayment, LoanPayment,
+                      Recurring, Tag, Transaction, User, transaction_tags)
 from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
                        TransactionIn, TransactionOut, TransactionUpdate, TransferIn)
 from ..services.ledger import apply_to_card
@@ -86,6 +86,7 @@ def delete_account(account_id: int, db: Session = Depends(get_db), user: User = 
         chunk = tx_ids[part:part + 400]
         db.execute(delete(transaction_tags).where(transaction_tags.c.transaction_id.in_(chunk)))
         db.execute(delete(Attachment).where(Attachment.transaction_id.in_(chunk)))
+        db.execute(update(LoanPayment).where(LoanPayment.transaction_id.in_(chunk)).values(transaction_id=None))
     db.query(Transaction).filter(Transaction.account_id == acc.id).delete()
     db.query(Recurring).filter(Recurring.account_id == acc.id).delete()
     debt_id = acc.debt_id
@@ -207,6 +208,8 @@ def update_transaction(tx_id: int, data: TransactionUpdate,
     tx = owned(db, Transaction, tx_id, user)
     if tx.transfer_id:
         raise HTTPException(422, "Las transferencias no se editan: bórrala y créala de nuevo")
+    if tx.loan_id:
+        raise HTTPException(422, "Este movimiento pertenece a un préstamo: gestiónalo desde «Préstamos»")
     changes = data.model_dump(exclude_unset=True, exclude={"clear_category"})
     if "account_id" in changes and changes["account_id"] is not None:
         owned(db, Account, changes["account_id"], user)
@@ -232,6 +235,8 @@ def update_transaction(tx_id: int, data: TransactionUpdate,
 @router.delete("/transactions/{tx_id}", status_code=204)
 def delete_transaction(tx_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     tx = owned(db, Transaction, tx_id, user)
+    if tx.loan_id:
+        raise HTTPException(422, "Este movimiento pertenece a un préstamo: bórralo desde «Préstamos»")
     legs = [tx]
     if tx.transfer_id:  # borrar una pata de una transferencia borra las dos
         legs = list(db.scalars(select(Transaction).where(Transaction.transfer_id == tx.transfer_id,
@@ -273,7 +278,8 @@ def trend(months: int = Query(6, ge=1, le=24),
     start = date(first // 12, first % 12 + 1, 1)
     rows = db.execute(
         select(Transaction.date, Transaction.kind, Transaction.amount)
-        .where(Transaction.user_id == user.id, Transaction.transfer_id.is_(None), Transaction.date >= start)
+        .where(Transaction.user_id == user.id, Transaction.transfer_id.is_(None), Transaction.loan_id.is_(None),
+               Transaction.date >= start)
     ).all()
     for d, kind, amount in rows:
         key = f"{d.year}-{d.month:02d}"
@@ -289,7 +295,7 @@ def summary(month: str = Query(..., pattern=r"^\d{4}-\d{2}$"),
     year, mon = int(month[:4]), int(month[5:])
     start = date(year, mon, 1)
     end = date(year + (mon == 12), mon % 12 + 1, 1)
-    base = [Transaction.user_id == user.id, Transaction.transfer_id.is_(None),
+    base = [Transaction.user_id == user.id, Transaction.transfer_id.is_(None), Transaction.loan_id.is_(None),
             Transaction.date >= start, Transaction.date < end]
     totals = dict(db.execute(
         select(Transaction.kind, func.sum(Transaction.amount)).where(*base).group_by(Transaction.kind)

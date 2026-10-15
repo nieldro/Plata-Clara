@@ -1,9 +1,9 @@
 import datetime as _dt  # para campos llamados «date» con valor por defecto (si no, tapan el tipo)
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, model_validator
 
 RateType = Literal["EA", "MV", "NA"]
 
@@ -95,6 +95,7 @@ class TransactionOut(ORM, TransactionIn):
     transfer_id: str | None = None
     tags: list[str] = Field(default_factory=list, validation_alias="tag_names")
     attachments: int = Field(default=0, validation_alias="attachment_count")
+    loan_id: int | None = None
 
 
 class TransactionUpdate(BaseModel):
@@ -145,6 +146,62 @@ class DebtPaymentOut(ORM):
     interest: Decimal
     principal: Decimal
     date: date
+
+
+# --- préstamos y gastos compartidos ---
+PersonName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+
+
+class LoanIn(BaseModel):
+    person: PersonName
+    direction: Literal["lent", "borrowed"]
+    amount: Decimal = Field(gt=0, lt=Decimal("1000000000000"))
+    date: _dt.date
+    due_date: _dt.date | None = None
+    note: str = Field(default="", max_length=255)
+    account_id: int | None = None  # si se indica, el dinero entra o sale de esa cuenta
+
+    @model_validator(mode="after")
+    def _due_after_date(self):
+        if self.due_date and self.due_date < self.date:
+            raise ValueError("La fecha límite no puede ser anterior al préstamo")
+        return self
+
+
+class LoanUpdate(BaseModel):
+    person: PersonName | None = None
+    note: str | None = Field(default=None, max_length=255)
+    due_date: _dt.date | None = None
+    clear_due_date: bool = False
+
+
+class LoanPaymentIn(BaseModel):
+    amount: Decimal = Field(gt=0, lt=Decimal("1000000000000"))
+    date: _dt.date
+    note: str = Field(default="", max_length=255)
+    account_id: int | None = None
+
+
+class SplitParticipant(BaseModel):
+    person: PersonName
+    amount: Decimal | None = Field(default=None, gt=0)  # None en todos = partes iguales
+
+
+class SplitIn(BaseModel):
+    account_id: int
+    category_id: int | None = None
+    total: Decimal = Field(gt=0, lt=Decimal("1000000000000"))
+    date: _dt.date
+    note: str = Field(default="", max_length=255)
+    due_date: _dt.date | None = None
+    participants: list[SplitParticipant] = Field(min_length=1, max_length=20)
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        given = [p.amount is not None for p in self.participants]
+        if any(given) and not all(given):
+            raise ValueError("Indica el monto de todos los participantes o de ninguno (partes iguales)")
+        return self
 
 
 # --- importación de extractos ---
