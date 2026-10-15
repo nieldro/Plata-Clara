@@ -6,13 +6,14 @@ const PAGE = 50;
 
 type Filters = {
   q: string; date_from: string; date_to: string; min_amount: string; max_amount: string;
-  category: string; kind: string; account: string;
+  category: string; kind: string; account: string; tag: string;
 };
-const EMPTY: Filters = { q: "", date_from: "", date_to: "", min_amount: "", max_amount: "", category: "", kind: "", account: "" };
+const EMPTY: Filters = { q: "", date_from: "", date_to: "", min_amount: "", max_amount: "", category: "", kind: "", account: "", tag: "" };
 
 type Props = {
   accounts: Account[];
   cats: Category[];
+  tagNames: string[];
   insts: Institution[];
   accountFilter: number | null;
   version: number;
@@ -31,12 +32,13 @@ function toQuery(f: Filters, accountFilter: number | null, offset: number) {
   if (f.category === "none") p.set("uncategorized", "true");
   else if (f.category) p.set("category_id", f.category);
   if (f.kind) p.set("kind", f.kind);
+  if (f.tag) p.set("tag", f.tag);
   const account = f.account || (accountFilter ? String(accountFilter) : "");
   if (account) p.set("account_id", account);
   return p.toString();
 }
 
-export default function TransactionHistory({ accounts, cats, insts, accountFilter, version, onEdit, onChanged, onClearAccount }: Props) {
+export default function TransactionHistory({ accounts, cats, tagNames, insts, accountFilter, version, onEdit, onChanged, onClearAccount }: Props) {
   const [f, setF] = useState<Filters>(EMPTY);
   const [debouncedQ, setDebouncedQ] = useState("");
   const [items, setItems] = useState<Tx[]>([]);
@@ -101,6 +103,12 @@ export default function TransactionHistory({ accounts, cats, insts, accountFilte
           <option value="none">Sin categoría</option>
           {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        {tagNames.length > 0 && (
+          <select value={f.tag} onChange={set("tag")}>
+            <option value="">Todas las etiquetas</option>
+            {tagNames.map((t) => <option key={t} value={t}>#{t}</option>)}
+          </select>
+        )}
         {!accountFilter && (
           <select value={f.account} onChange={set("account")}>
             <option value="">Todas las cuentas</option>
@@ -138,7 +146,10 @@ export default function TransactionHistory({ accounts, cats, insts, accountFilte
                     </span>
                   </td>
                   <td>{t.transfer_id ? "↔ Transferencia" : catName(t.category_id)}</td>
-                  <td>{t.note}</td>
+                  <td>
+                    {t.note}
+                    {t.tags.map((g) => <span className="tagchip mini" key={g}>#{g}</span>)}
+                  </td>
                   <td className={`num ${t.kind === "income" ? "pos" : "neg"}`}>{t.kind === "income" ? "+" : "−"}{money(t.amount)}</td>
                   <td className="actions">
                     {!t.transfer_id && <button className="link" title="Editar" onClick={() => onEdit(t)}>✎</button>}

@@ -1,8 +1,9 @@
 import { AnimatePresence } from "framer-motion";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, money, Tx } from "../api";
+import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, money, splitTags, TagSummary, Tx } from "../api";
 import AccountModal from "../components/AccountModal";
 import EditTransactionModal from "../components/EditTransactionModal";
+import TagInput from "../components/TagInput";
 import TransactionHistory from "../components/TransactionHistory";
 import InstitutionLogo from "../components/InstitutionLogo";
 
@@ -16,11 +17,15 @@ export default function Transactions() {
   const [error, setError] = useState("");
 
   const [version, setVersion] = useState(0); // al cambiar, el historial se vuelve a pedir
+  const [formKey, setFormKey] = useState(0); // reinicia el formulario (incluye el campo de etiquetas)
+  const [tagStats, setTagStats] = useState<TagSummary[]>([]);
 
   const load = useCallback(async () => {
     setAccounts(await api.get("/accounts"));
+    setTagStats(await api.get("/tags"));
     setVersion((v) => v + 1);
   }, []);
+  const tagNames = tagStats.map((t) => t.name);
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
     loadInstitutions().then(setInsts);
@@ -45,8 +50,10 @@ export default function Transactions() {
         amount: Number(f.get("amount")),
         date: f.get("date"),
         note: f.get("note") ?? "",
+        tags: splitTags(f.get("tags")),
       });
       form.reset();
+      setFormKey((k) => k + 1);
       load();
     } catch (err) {
       setError((err as Error).message);
@@ -136,7 +143,7 @@ export default function Transactions() {
         {accounts.length === 0 ? (
           <p className="empty">Primero agrega una cuenta (por ejemplo tu Bancolombia, Nequi o Hapi) para registrar movimientos.</p>
         ) : (
-          <form className="row" onSubmit={addTx}>
+          <form className="row" onSubmit={addTx} key={formKey}>
             <select name="kind"><option value="expense">Gasto</option><option value="income">Ingreso / abono</option></select>
             <input name="amount" type="number" step="0.01" min="0.01" placeholder="Monto" required />
             <select name="account" required defaultValue={filter ?? ""}
@@ -151,6 +158,7 @@ export default function Transactions() {
             </select>
             <input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
             <input name="note" placeholder="Nota" />
+            <TagInput suggestions={tagNames} />
             <button>Guardar</button>
           </form>
         )}
@@ -195,14 +203,37 @@ export default function Transactions() {
         </form>
       </div>
 
+      {tagStats.length > 0 && (
+        <div className="card">
+          <h2>Mis etiquetas</h2>
+          <p className="empty">Sigue un proyecto o un tema aparte de las categorías: cuánto llevas gastado en cada uno.</p>
+          <table>
+            <tbody>
+              {tagStats.map((t) => (
+                <tr key={t.id}>
+                  <td><span className="tagchip">#{t.name}</span></td>
+                  <td>{t.count} {t.count === 1 ? "movimiento" : "movimientos"}</td>
+                  <td className="num neg">−{money(t.expense)}</td>
+                  <td className="num pos">{Number(t.income) > 0 ? `+${money(t.income)}` : ""}</td>
+                  <td className="actions">
+                    <button className="link" title="Quitar la etiqueta de todos los movimientos"
+                      onClick={() => confirm(`¿Quitar la etiqueta #${t.name}? Los movimientos se conservan.`) && api.del(`/tags/${t.id}`).then(load)}>✕</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <TransactionHistory
-        accounts={accounts} cats={cats} insts={insts} accountFilter={filter} version={version}
+        accounts={accounts} cats={cats} insts={insts} tagNames={tagNames} accountFilter={filter} version={version}
         onEdit={setEditing} onChanged={load} onClearAccount={() => setFilter(null)}
       />
 
       <AnimatePresence>
         {editing && (
-          <EditTransactionModal key="edit" tx={editing} accounts={accounts} cats={cats}
+          <EditTransactionModal key="edit" tx={editing} accounts={accounts} cats={cats} suggestions={tagNames}
             onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />
         )}
         {modal && <AccountModal key="acc" onClose={() => setModal(false)} onCreated={() => { setModal(false); load(); }} />}

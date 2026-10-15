@@ -1,17 +1,19 @@
 import { motion } from "framer-motion";
 import { FormEvent, useState } from "react";
-import { Account, api, Category, Tx } from "../api";
+import { Account, api, Category, splitTags, Tx } from "../api";
 import { EASE } from "../theme";
+import TagInput from "./TagInput";
 
 type Props = {
   tx: Tx;
   accounts: Account[];
   cats: Category[];
+  suggestions?: string[];
   onClose: () => void;
   onSaved: () => void;
 };
 
-export default function EditTransactionModal({ tx, accounts, cats, onClose, onSaved }: Props) {
+export default function EditTransactionModal({ tx, accounts, cats, suggestions, onClose, onSaved }: Props) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -28,6 +30,7 @@ export default function EditTransactionModal({ tx, accounts, cats, onClose, onSa
         amount: Number(f.get("amount")),
         date: f.get("date"),
         note: String(f.get("note") ?? ""),
+        tags: splitTags(f.get("tags")),
         category_id: category,
         clear_category: category === null,
       });
@@ -60,6 +63,7 @@ export default function EditTransactionModal({ tx, accounts, cats, onClose, onSa
         </select>
         <input name="date" type="date" defaultValue={tx.date} required />
         <input name="note" defaultValue={tx.note} placeholder="Nota" maxLength={255} />
+        <TagInput initial={tx.tags} suggestions={suggestions} />
         {error && <p className="error">{error}</p>}
         <div className="row modal-actions">
           <button type="button" className="link" onClick={onClose}>Cancelar</button>

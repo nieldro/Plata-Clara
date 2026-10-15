@@ -83,7 +83,10 @@ export type Category = { id: number; name: string; kind: "income" | "expense" };
 export type Tx = {
   id: number; account_id: number; category_id: number | null;
   kind: "income" | "expense"; amount: number; date: string; note: string; transfer_id?: string | null;
+  tags: string[];
 };
+export type TagSummary = { id: number; name: string; count: number; income: number | string; expense: number | string };
+export const splitTags = (v: FormDataEntryValue | null) => String(v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 export type Debt = {
   id: number; name: string; kind: "credit_card" | "loan"; original_amount: number;
   current_balance: number; rate: number; rate_type: "EA" | "MV" | "NA";
