@@ -63,14 +63,53 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Presupuestos, Deudas, Ahorr
 - **Transferencias:** entre tus cuentas (por ejemplo, pagar la tarjeta desde el banco). No cuentan como ingreso ni gasto.
 - **Categorías propias:** crear y borrar (los movimientos quedan sin categoría).
 
+### Movimientos avanzados
+- **Importar extractos (CSV y Excel .xlsx):** sube el archivo del banco y revisa una vista previa antes de guardar.
+  Entiende extractos colombianos: separador `;` o `,`, tildes (UTF-8 o Windows-1252), líneas de resumen antes del
+  encabezado, montos como `$ 1.234.567,89`, `(50.000)` o `50.000-`, fechas día/mes/año y columnas de débito y crédito
+  separadas. Si no reconoce las columnas, te deja indicarlas. Para tarjetas existe la opción «invertir» (las compras
+  vienen positivas). Máx. 2.000 filas y 5 MB por archivo.
+  - **Duplicados:** cada fila lleva una huella; reimportar el mismo extracto marca «Ya importado» y no duplica nada.
+    Si coincide con un movimiento que anotaste a mano (misma cuenta, fecha, monto y tipo) lo marca «Posible duplicado».
+- **Categorización automática:** aprende de lo que categorizas (sin IA): si pones «Éxito» en Mercado, la próxima vez lo
+  sugiere. Ignora tildes y mayúsculas, no sugiere cuando hay dudas entre dos categorías y respeta si es ingreso o gasto.
+  Puedes forzar reglas manuales, que mandan sobre lo aprendido.
+- **Buscar y filtrar:** por texto (nota o categoría), fechas, monto mínimo y máximo, cuenta, categoría, tipo y etiqueta,
+  con carga paginada.
+- **Editar movimientos:** el saldo de la cuenta y la deuda de la tarjeta se recalculan solos.
+- **Etiquetas:** agrupa movimientos de distintas categorías en un proyecto («viaje-cartagena») y mira cuánto va gastado.
+- **Recibos:** adjunta foto (JPG, PNG, WEBP) o PDF a un movimiento (máx. 5 por movimiento, 5 MB c/u). En el celular
+  abre la cámara.
+- **Quién me debe:** préstamos sin intereses en ambos sentidos, con abonos y avisos de vencimiento. Si eliges una
+  cuenta, el dinero entra o sale de ella, pero **prestar o cobrar no cuenta como gasto ni ingreso del mes**.
+- **Dividir una cuenta:** pagaste entre varios; solo tu parte es gasto (y entra a tu presupuesto), lo demás queda como
+  «te deben». Partes iguales (los centavos sobrantes te tocan a ti) o montos distintos.
+
+## Seguridad
+- **Sin credenciales en el repositorio:** `.env` está en `.gitignore`; solo se sube `.env.example` con valores de ejemplo.
+  Un escaneo con gitleaks (`.github/workflows/secrets.yml`) revisa toda la historia en cada push.
+- Con `ENVIRONMENT=production` la API **no arranca** si `SECRET_KEY` es la de desarrollo o tiene menos de 32 caracteres.
+  `docker-compose.yml` exige las variables del `.env` (falla con un mensaje claro si falta alguna).
+- Contraseñas con bcrypt, sesiones JWT, y cada consulta filtra por el usuario dueño: nadie ve ni toca datos ajenos
+  (las pruebas lo verifican para cada recurso).
+- **Archivos subidos:** el tipo se verifica por los bytes del archivo (no por lo que declara el navegador), se limita
+  el tamaño, se guardan con un nombre generado (nunca el del usuario, así no hay manipulación de rutas) y solo se
+  descargan con sesión del dueño. Los Excel se leen con `defusedxml` y límite de filas.
+
 ## Pruebas y CI
 ```powershell
-cd backend; python -m pytest -q     # 43 pruebas de API y de la matemática financiera
+cd backend; python -m pytest -q     # 136 pruebas de API, importador, recibos, préstamos y matemática financiera
 ```
-GitHub Actions (`.github/workflows/ci.yml`) corre las pruebas del backend y el build del frontend en cada push.
+Las pruebas corren sobre SQLite en memoria **con llaves foráneas activadas** (como PostgreSQL) y una carpeta de
+archivos nueva en cada prueba. GitHub Actions (`.github/workflows/ci.yml`) corre las pruebas del backend y el build del
+frontend en cada push.
+
+> **Nota:** las pruebas usan SQLite; el despliegue con Docker usa PostgreSQL. Las consultas son estándar SQLAlchemy,
+> pero conviene correr `docker compose up` y probar los flujos principales contra PostgreSQL antes de producción.
 
 ## Pendiente / siguientes pasos
 - Migraciones con Alembic: hoy se usa `create_all`; al cambiar columnas las bases existentes no se actualizan solas
   (en desarrollo, borrar `dev.db`)
-- Importar extractos CSV, exportar a Excel/PDF
+- Exportar a Excel/PDF
 - Build de producción (nginx sirviendo el frontend)
+- Limitar intentos de inicio de sesión (rate limiting) antes de exponerla a internet
