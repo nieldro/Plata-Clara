@@ -65,6 +65,8 @@ class Transaction(Base):
     note: Mapped[str] = mapped_column(String(255), default="")
     # Las dos patas de una transferencia comparten este id; no cuentan como ingreso ni gasto.
     transfer_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    # Huella del renglón de un extracto importado; evita importar dos veces el mismo movimiento.
+    import_hash: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
     tags: Mapped[list["Tag"]] = relationship(secondary=transaction_tags, lazy="selectin")
 
     @property

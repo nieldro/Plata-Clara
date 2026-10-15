@@ -146,6 +146,22 @@ class DebtPaymentOut(ORM):
     date: date
 
 
+# --- importación de extractos ---
+class ImportRowIn(BaseModel):
+    date: _dt.date
+    description: str = Field(default="", max_length=255)
+    amount: Decimal = Field(gt=0, lt=Decimal("1000000000000"))
+    kind: Literal["income", "expense"]
+    category_id: int | None = None
+    import_hash: str = Field(min_length=40, max_length=40, pattern="^[0-9a-f]{40}$")
+    tags: list[str] = []
+
+
+class ImportCommitIn(BaseModel):
+    account_id: int
+    rows: list[ImportRowIn] = Field(min_length=1, max_length=2000)
+
+
 # --- reglas de categorización ---
 class RuleIn(BaseModel):
     keyword: str = Field(min_length=1, max_length=60)
