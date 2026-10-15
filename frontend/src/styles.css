@@ -139,6 +139,7 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.hint { margin: 10px 0 0; font-size: 13px; color: var(--gold-soft); }
 .taginput { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1 1 220px; padding: 4px 8px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); }
 .taginput:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201, 169, 106, 0.15); }
 .taginput input:not([type="hidden"]) { flex: 1 1 120px; border: 0; background: none; box-shadow: none; padding: 6px 4px; min-width: 100px; }

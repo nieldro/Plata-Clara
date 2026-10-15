@@ -1,8 +1,9 @@
 import { AnimatePresence } from "framer-motion";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, money, splitTags, TagSummary, Tx } from "../api";
 import AccountModal from "../components/AccountModal";
 import EditTransactionModal from "../components/EditTransactionModal";
+import RulesSection from "../components/RulesSection";
 import TagInput from "../components/TagInput";
 import TransactionHistory from "../components/TransactionHistory";
 import InstitutionLogo from "../components/InstitutionLogo";
@@ -27,6 +28,30 @@ export default function Transactions() {
   }, []);
   const tagNames = tagStats.map((t) => t.name);
   useEffect(() => { load(); }, [load]);
+
+  // Categoría sugerida mientras escribes la nota (solo rellena si aún no elegiste una a mano).
+  const [kind, setKind] = useState<"income" | "expense">("expense");
+  const [note, setNote] = useState("");
+  const [catValue, setCatValue] = useState("");
+  const [autoCat, setAutoCat] = useState<{ id: number; words: string } | null>(null);
+  useEffect(() => {
+    if (note.trim().length < 3) return setAutoCat(null);
+    let stale = false;
+    const t = setTimeout(async () => {
+      try {
+        const r = await api.get<{ suggestion: { category_id: number; matched: string[] } | null }>(
+          `/categorize?text=${encodeURIComponent(note)}&kind=${kind}`);
+        if (stale) return;
+        const s = r.suggestion;
+        if (!s) return setAutoCat(null);
+        setCatValue((cur) => (cur === "" || autoCatRef.current === Number(cur) ? String(s.category_id) : cur));
+        autoCatRef.current = s.category_id;
+        setAutoCat({ id: s.category_id, words: s.matched.join(", ") });
+      } catch { /* la sugerencia es opcional */ }
+    }, 350);
+    return () => { stale = true; clearTimeout(t); };
+  }, [note, kind]);
+  const autoCatRef = useRef<number | null>(null);
   useEffect(() => {
     loadInstitutions().then(setInsts);
     api.get<Category[]>("/categories").then(setCats);
@@ -53,6 +78,7 @@ export default function Transactions() {
         tags: splitTags(f.get("tags")),
       });
       form.reset();
+      setNote(""); setCatValue(""); setAutoCat(null);
       setFormKey((k) => k + 1);
       load();
     } catch (err) {
@@ -144,7 +170,9 @@ export default function Transactions() {
           <p className="empty">Primero agrega una cuenta (por ejemplo tu Bancolombia, Nequi o Hapi) para registrar movimientos.</p>
         ) : (
           <form className="row" onSubmit={addTx} key={formKey}>
-            <select name="kind"><option value="expense">Gasto</option><option value="income">Ingreso / abono</option></select>
+            <select name="kind" value={kind} onChange={(e) => { setKind(e.target.value as "income" | "expense"); setAutoCat(null); }}>
+              <option value="expense">Gasto</option><option value="income">Ingreso / abono</option>
+            </select>
             <input name="amount" type="number" step="0.01" min="0.01" placeholder="Monto" required />
             <select name="account" required defaultValue={filter ?? ""}
               onChange={(e) => { if (e.target.value === "new") { e.target.value = ""; setModal(true); } }}>
@@ -152,15 +180,18 @@ export default function Transactions() {
               {accounts.map((a) => <option key={a.id} value={a.id}>{entityName(a)} · {a.name}</option>)}
               <option value="new">＋ Otra cuenta o entidad…</option>
             </select>
-            <select name="category">
+            <select name="category" value={catValue} onChange={(e) => { setCatValue(e.target.value); setAutoCat(null); }}>
               <option value="">Categoría…</option>
-              {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {cats.filter((c) => c.kind === kind).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
-            <input name="note" placeholder="Nota" />
+            <input name="note" placeholder="Nota (ej. Éxito, Uber, Netflix)" value={note} onChange={(e) => setNote(e.target.value)} />
             <TagInput suggestions={tagNames} />
             <button>Guardar</button>
           </form>
+        )}
+        {autoCat && (
+          <p className="hint">✨ Categoría sugerida: <b>{catName(autoCat.id)}</b> por «{autoCat.words}». Puedes cambiarla.</p>
         )}
         {error && <p className="error">{error}</p>}
       </div>
@@ -202,6 +233,8 @@ export default function Transactions() {
           <button>Agregar</button>
         </form>
       </div>
+
+      <RulesSection cats={cats} />
 
       {tagStats.length > 0 && (
         <div className="card">
