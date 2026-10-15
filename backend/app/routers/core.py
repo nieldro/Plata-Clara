@@ -11,6 +11,7 @@ from ..institutions import INSTITUTIONS, SLUGS
 from ..models import Account, Category, Debt, DebtPayment, Transaction, User
 from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
                        TransactionIn, TransactionOut)
+from ..services.ledger import apply_to_card
 
 router = APIRouter(tags=["movimientos"])
 
@@ -36,21 +37,6 @@ def _account_out(acc: Account, moved: dict, debt: Debt | None) -> AccountOut:
     else:
         item.balance = acc.initial_balance + (moved.get(acc.id) or 0)
     return item
-
-
-def _apply_to_card(db: Session, account_id: int, kind: str, amount: Decimal, sign: int) -> None:
-    """Refleja un movimiento en la deuda de la tarjeta (sign=+1 al crearlo, -1 al borrarlo).
-
-    Un gasto sube la deuda; un ingreso (abono/pago) la baja. Nunca queda negativa.
-    """
-    acc = db.get(Account, account_id)
-    if not acc or not acc.debt_id:
-        return
-    debt = db.get(Debt, acc.debt_id)
-    if not debt:
-        return
-    delta = amount if kind == "expense" else -amount
-    debt.current_balance = max(debt.current_balance + delta * sign, Decimal(0))
 
 
 @router.get("/institutions")
@@ -154,7 +140,7 @@ def create_transaction(data: TransactionIn, db: Session = Depends(get_db), user:
         owned(db, Category, data.category_id, user)
     tx = Transaction(user_id=user.id, **data.model_dump())
     db.add(tx)
-    _apply_to_card(db, tx.account_id, tx.kind, tx.amount, +1)
+    apply_to_card(db, tx.account_id, tx.kind, tx.amount, +1)
     db.commit()
     db.refresh(tx)
     return tx
@@ -163,7 +149,7 @@ def create_transaction(data: TransactionIn, db: Session = Depends(get_db), user:
 @router.delete("/transactions/{tx_id}", status_code=204)
 def delete_transaction(tx_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     tx = owned(db, Transaction, tx_id, user)
-    _apply_to_card(db, tx.account_id, tx.kind, tx.amount, -1)
+    apply_to_card(db, tx.account_id, tx.kind, tx.amount, -1)
     db.delete(tx)
     db.commit()
 

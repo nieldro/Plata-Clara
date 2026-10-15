@@ -95,6 +95,22 @@ class SavingsGoal(Base):
     annual_rate: Mapped[Decimal] = mapped_column(Numeric(8, 4), default=0)  # EA %, ej. CDT/cuenta de ahorro
 
 
+class Recurring(Base):
+    """Movimiento que se repite (arriendo, suscripciones, nómina...)."""
+    __tablename__ = "recurring"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"))
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"), nullable=True)
+    kind: Mapped[str] = mapped_column(String(10))  # income | expense
+    amount: Mapped[Decimal] = mapped_column(Money)
+    note: Mapped[str] = mapped_column(String(255), default="")
+    frequency: Mapped[str] = mapped_column(String(10))  # weekly | biweekly | monthly
+    anchor_day: Mapped[int] = mapped_column()  # día del mes original (para meses cortos)
+    next_date: Mapped[date] = mapped_column(Date, index=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
 class Budget(Base):
     """Tope mensual de gasto para una categoría."""
     __tablename__ = "budgets"

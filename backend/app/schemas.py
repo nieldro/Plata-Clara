@@ -121,6 +121,29 @@ class DebtPaymentOut(ORM):
     date: date
 
 
+# --- recurrentes ---
+class RecurringIn(BaseModel):
+    account_id: int
+    category_id: int | None = None
+    kind: Literal["income", "expense"]
+    amount: Decimal = Field(gt=0)
+    note: str = Field(default="", max_length=255)
+    frequency: Literal["weekly", "biweekly", "monthly"] = "monthly"
+    start_date: date  # primera vez que se registra
+
+
+class RecurringOut(ORM):
+    id: int
+    account_id: int
+    category_id: int | None
+    kind: Literal["income", "expense"]
+    amount: Decimal
+    note: str
+    frequency: Literal["weekly", "biweekly", "monthly"]
+    next_date: date
+    active: bool
+
+
 # --- presupuestos ---
 class BudgetIn(BaseModel):
     amount: Decimal = Field(gt=0)
