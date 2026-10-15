@@ -138,6 +138,8 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal { width: 100%; max-width: 380px; margin: 0; padding: 36px; display: flex; flex-direction: column; gap: 12px; background: #121217; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
+td.actions { white-space: nowrap; text-align: right; }
+
 /* ---------- categorías ---------- */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { display: inline-flex; align-items: center; gap: 2px; padding: 4px 4px 4px 12px; border-radius: 99px; font-size: 13px; border: 1px solid var(--line); color: var(--neg); }

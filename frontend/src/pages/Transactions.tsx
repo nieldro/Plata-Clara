@@ -2,6 +2,7 @@ import { AnimatePresence } from "framer-motion";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, money, Tx } from "../api";
 import AccountModal from "../components/AccountModal";
+import EditTransactionModal from "../components/EditTransactionModal";
 import InstitutionLogo from "../components/InstitutionLogo";
 
 export default function Transactions() {
@@ -11,6 +12,7 @@ export default function Transactions() {
   const [insts, setInsts] = useState<Institution[]>([]);
   const [filter, setFilter] = useState<number | null>(null);
   const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState<Tx | null>(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -214,7 +216,10 @@ export default function Transactions() {
                   <td className={`num ${t.kind === "income" ? "pos" : "neg"}`}>
                     {t.kind === "income" ? "+" : "−"}{money(t.amount)}
                   </td>
-                  <td><button className="link" onClick={() => api.del(`/transactions/${t.id}`).then(load)}>✕</button></td>
+                  <td className="actions">
+                    {!t.transfer_id && <button className="link" title="Editar" onClick={() => setEditing(t)}>✎</button>}
+                    <button className="link" title="Borrar" onClick={() => api.del(`/transactions/${t.id}`).then(load)}>✕</button>
+                  </td>
                 </tr>
               );
             })}
@@ -224,6 +229,10 @@ export default function Transactions() {
       </div>
 
       <AnimatePresence>
+        {editing && (
+          <EditTransactionModal key="edit" tx={editing} accounts={accounts} cats={cats}
+            onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />
+        )}
         {modal && <AccountModal key="acc" onClose={() => setModal(false)} onCreated={() => { setModal(false); load(); }} />}
       </AnimatePresence>
     </>
