@@ -20,19 +20,16 @@ docker compose up --build
 - App: http://localhost:5173
 - API + documentación Swagger: http://localhost:8000/docs
 
-## Pruebas del cálculo financiero
-```powershell
-docker compose exec backend pytest
-```
-
 ## Estructura
 ```
 backend/app/
   models.py          tablas
   schemas.py         validación de entrada/salida
   services/finance.py  matemática financiera (tasas, cuotas, amortización, ahorro)
-  routers/           auth, core (cuentas/movimientos), debts, savings, simulator
-frontend/src/pages/  Resumen, Movimientos, Deudas, Ahorro, Simulador
+  services/          finance, queries, ledger, recurring, notifications, assistant
+  routers/           auth, core (cuentas/movimientos/transferencias), budgets, recurring,
+                     notifications, assistant, debts, savings, simulator
+frontend/src/pages/  Resumen, Cuentas y movimientos, Presupuestos, Deudas, Ahorro, Asistente, Simulador
 ```
 
 ## Cómo se calculan los intereses
@@ -53,10 +50,27 @@ frontend/src/pages/  Resumen, Movimientos, Deudas, Ahorro, Simulador
 - **Tarjeta de crédito:** al crearla se crea su deuda (tasa, cupo, pago mensual). Un gasto en la tarjeta sube la
   deuda, un ingreso/abono la baja, y la proyección con intereses sale en «Deudas y tarjetas».
 
+## Funciones
+- **Presupuestos:** tope mensual por categoría de gasto, con barra de avance y navegación por mes.
+- **Recurrentes:** arriendo, suscripciones, nómina (semanal, quincenal o mensual). Se registran solos al entrar a la app
+  y, si pasaron días sin entrar, se ponen al día. Es idempotente.
+- **Notificaciones:** campana con avisos de presupuesto al 80 % y 100 %, pago de tarjeta/crédito en los próximos 3 días
+  (requiere el «día de pago»), metas por vencer y recurrentes registrados. Cada aviso sale una sola vez. Opcionalmente
+  también como aviso del navegador.
+- **Asistente:** reglas explicables sobre tus datos: tasa de ahorro, categorías que se dispararon frente al mes pasado,
+  presupuestos, deuda más cara y cuánto ahorras con un abono extra, fondo de emergencia (meses cubiertos) y viabilidad de metas.
+- **Ahorro:** aportes y retiros con historial, edición de la meta y proyección con gráfica.
+- **Transferencias:** entre tus cuentas (por ejemplo, pagar la tarjeta desde el banco). No cuentan como ingreso ni gasto.
+- **Categorías propias:** crear y borrar (los movimientos quedan sin categoría).
+
+## Pruebas y CI
+```powershell
+cd backend; python -m pytest -q     # 43 pruebas de API y de la matemática financiera
+```
+GitHub Actions (`.github/workflows/ci.yml`) corre las pruebas del backend y el build del frontend en cada push.
+
 ## Pendiente / siguientes pasos
-- Migraciones con Alembic: al cambiar columnas, las bases existentes no se actualizan solas (en desarrollo, borrar `dev.db`)
-- Migraciones con Alembic (hoy usa `create_all`)
-- Pruebas de API con base de datos de prueba
-- Gráficas (recharts), presupuestos por categoría, gastos recurrentes
+- Migraciones con Alembic: hoy se usa `create_all`; al cambiar columnas las bases existentes no se actualizan solas
+  (en desarrollo, borrar `dev.db`)
 - Importar extractos CSV, exportar a Excel/PDF
-- Build de producción (nginx sirviendo el frontend) y CI con GitHub Actions
+- Build de producción (nginx sirviendo el frontend)
