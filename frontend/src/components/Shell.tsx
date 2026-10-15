@@ -9,6 +9,7 @@ import Simulator from "../pages/Simulator";
 import Transactions from "../pages/Transactions";
 import { EASE } from "../theme";
 import { Icons, Logo } from "./Icons";
+import NotificationBell from "./NotificationBell";
 
 const TABS: { key: string; label: string; icon: ReactNode; page: () => JSX.Element }[] = [
   { key: "home", label: "Resumen", icon: Icons.home, page: Dashboard },
@@ -52,8 +53,11 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
 
       <section className="content">
         <header className="page-head">
-          <small>{name ? `Hola, ${name}` : " "}</small>
-          <h1>{current.label}</h1>
+          <div>
+            <small>{name ? `Hola, ${name}` : " "}</small>
+            <h1>{current.label}</h1>
+          </div>
+          {ready && <NotificationBell />}
         </header>
         <AnimatePresence mode="wait">
           <motion.div

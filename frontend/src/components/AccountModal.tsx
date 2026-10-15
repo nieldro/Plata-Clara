@@ -60,6 +60,7 @@ export default function AccountModal({ onClose, onCreated }: { onClose: () => vo
         rate: type === "credit_card" ? num("rate") ?? 0 : 0,
         rate_type: f.get("rate_type") || "EA",
         monthly_payment: type === "credit_card" ? num("payment") : null,
+        due_day: type === "credit_card" ? num("due_day") : null,
       });
       onCreated();
     } catch (err) {
@@ -133,6 +134,7 @@ export default function AccountModal({ onClose, onCreated }: { onClose: () => vo
                   <option value="NA">Nominal anual</option>
                 </select>
                 <input name="payment" type="number" step="0.01" min="0" placeholder="Pago mensual habitual" />
+                <input name="due_day" type="number" min="1" max="31" placeholder="Día de pago (1-31) para avisarte" />
               </div>
             )}
           </>

@@ -138,6 +138,25 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal { width: 100%; max-width: 380px; margin: 0; padding: 36px; display: flex; flex-direction: column; gap: 12px; background: #121217; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
+/* ---------- notificaciones ---------- */
+.page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.bell-wrap { position: relative; }
+.bell { position: relative; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; background: var(--card); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
+.bell:hover { border-color: var(--gold); box-shadow: none; }
+.badge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px; display: grid; place-items: center; font-size: 11px; font-weight: 600; background: var(--gold); color: #17130a; }
+.bell-backdrop { position: fixed; inset: 0; z-index: 20; }
+.bell-panel { position: absolute; right: 0; top: 58px; z-index: 30; width: min(420px, calc(100vw - 32px)); margin: 0; padding: 18px; background: #121217; box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.8); }
+.bell-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.bell-head h2 { margin: 0; font-size: 22px; }
+.bell-list { max-height: 380px; overflow-y: auto; margin-bottom: 10px; }
+.notif { padding: 12px 12px 12px 14px; border-radius: 12px; border-left: 2px solid transparent; cursor: pointer; transition: background 0.3s; }
+.notif:hover { background: rgba(255, 255, 255, 0.03); }
+.notif.unread { border-left-color: var(--gold); background: rgba(201, 169, 106, 0.06); }
+.notif.k-budget.unread, .notif.k-due.unread { border-left-color: #f0c36b; }
+.notif-top { display: flex; justify-content: space-between; align-items: center; }
+.notif b { display: block; font-weight: 500; }
+.notif p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+
 /* ---------- presupuestos ---------- */
 .month-nav { display: flex; align-items: center; justify-content: center; gap: 18px; }
 .month-nav h2 { margin: 0; min-width: 220px; text-align: center; text-transform: capitalize; }
