@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -93,3 +93,13 @@ class SavingsGoal(Base):
     current_amount: Mapped[Decimal] = mapped_column(Money, default=0)
     target_date: Mapped[date] = mapped_column(Date)
     annual_rate: Mapped[Decimal] = mapped_column(Numeric(8, 4), default=0)  # EA %, ej. CDT/cuenta de ahorro
+
+
+class Budget(Base):
+    """Tope mensual de gasto para una categoría."""
+    __tablename__ = "budgets"
+    __table_args__ = (UniqueConstraint("user_id", "category_id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
+    amount: Mapped[Decimal] = mapped_column(Money)

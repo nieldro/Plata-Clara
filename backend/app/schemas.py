@@ -121,6 +121,11 @@ class DebtPaymentOut(ORM):
     date: date
 
 
+# --- presupuestos ---
+class BudgetIn(BaseModel):
+    amount: Decimal = Field(gt=0)
+
+
 # --- ahorro ---
 class GoalIn(BaseModel):
     name: str
