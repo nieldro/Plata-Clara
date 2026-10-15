@@ -2,7 +2,7 @@
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from ..models import Budget, Category, Transaction
@@ -42,6 +42,17 @@ def month_totals(db: Session, user_id: int, month: str) -> tuple[Decimal, Decima
         .group_by(Transaction.kind)
     ).all())
     return totals.get("income") or Decimal(0), totals.get("expense") or Decimal(0)
+
+
+def account_balances(db: Session, user_id: int) -> dict[int, Decimal]:
+    """Suma de movimientos por cuenta (ingresos − gastos), sin el saldo inicial."""
+    signed = case((Transaction.kind == "income", Transaction.amount), else_=-Transaction.amount)
+    rows = db.execute(
+        select(Transaction.account_id, func.sum(signed))
+        .where(Transaction.user_id == user_id)
+        .group_by(Transaction.account_id)
+    ).all()
+    return {acc: total for acc, total in rows}
 
 
 def budget_rows(db: Session, user_id: int, month: str) -> list[dict]:

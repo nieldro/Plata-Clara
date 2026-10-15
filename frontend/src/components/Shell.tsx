@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useEffect, useState } from "react";
 import { api } from "../api";
+import Assistant from "../pages/Assistant";
 import Budgets from "../pages/Budgets";
 import Dashboard from "../pages/Dashboard";
 import Debts from "../pages/Debts";
@@ -17,6 +18,7 @@ const TABS: { key: string; label: string; icon: ReactNode; page: () => JSX.Eleme
   { key: "budgets", label: "Presupuestos", icon: Icons.pie, page: Budgets },
   { key: "debts", label: "Deudas y tarjetas", icon: Icons.card, page: Debts },
   { key: "savings", label: "Ahorro", icon: Icons.target, page: Savings },
+  { key: "assistant", label: "Asistente", icon: Icons.spark, page: Assistant },
   { key: "sim", label: "Simulador", icon: Icons.calc, page: Simulator },
 ];
 

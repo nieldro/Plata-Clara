@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import case, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -12,21 +12,12 @@ from ..models import Account, Category, Debt, DebtPayment, Transaction, User
 from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
                        TransactionIn, TransactionOut)
 from ..services.ledger import apply_to_card
+from ..services.queries import account_balances
 
 router = APIRouter(tags=["movimientos"])
 
 
 # ---------- cuentas ----------
-def _balances(db: Session, user_id: int) -> dict[int, float]:
-    signed = case((Transaction.kind == "income", Transaction.amount), else_=-Transaction.amount)
-    rows = db.execute(
-        select(Transaction.account_id, func.sum(signed))
-        .where(Transaction.user_id == user_id)
-        .group_by(Transaction.account_id)
-    ).all()
-    return {a: s for a, s in rows}
-
-
 def _account_out(acc: Account, moved: dict, debt: Debt | None) -> AccountOut:
     item = AccountOut.model_validate(acc)
     if acc.type == "credit_card":
@@ -47,7 +38,7 @@ def institutions():
 
 @router.get("/accounts", response_model=list[AccountOut])
 def list_accounts(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    moved = _balances(db, user.id)
+    moved = account_balances(db, user.id)
     debts = {d.id: d for d in db.scalars(select(Debt).where(Debt.user_id == user.id))}
     accounts = db.scalars(select(Account).where(Account.user_id == user.id).order_by(Account.id))
     return [_account_out(a, moved, debts.get(a.debt_id)) for a in accounts]

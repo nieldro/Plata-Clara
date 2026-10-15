@@ -138,6 +138,16 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal { width: 100%; max-width: 380px; margin: 0; padding: 36px; display: flex; flex-direction: column; gap: 12px; background: #121217; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
+/* ---------- asistente ---------- */
+.insights { display: grid; gap: 14px; }
+.insight { margin: 0; display: flex; gap: 18px; align-items: flex-start; }
+.insight h3 { font-size: 26px; margin: 2px 0 6px; }
+.insight p { margin: 0; color: var(--muted); }
+.insight-dot { flex: none; width: 10px; height: 10px; margin-top: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 5px rgba(201, 169, 106, 0.12); }
+.insight.warn .insight-dot { background: #f0c36b; box-shadow: 0 0 0 5px rgba(240, 195, 107, 0.14); }
+.insight.good .insight-dot { background: var(--pos); box-shadow: 0 0 0 5px rgba(127, 209, 163, 0.12); }
+.insight.warn { border-color: rgba(240, 195, 107, 0.25); }
+
 /* ---------- notificaciones ---------- */
 .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .bell-wrap { position: relative; }
