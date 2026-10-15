@@ -11,11 +11,13 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
-from ..models import Account, Budget, Category, Debt, DebtPayment, Recurring, Transaction, User
+from ..models import (Account, Budget, Category, Debt, DebtPayment, Recurring, Tag, Transaction, User,
+                      transaction_tags)
 from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
                        TransactionIn, TransactionOut, TransactionUpdate, TransferIn)
 from ..services.ledger import apply_to_card
 from ..services.queries import account_balances
+from ..services.tags import normalize, set_tags
 
 router = APIRouter(tags=["movimientos"])
 
@@ -123,6 +125,7 @@ def list_transactions(
     q: str | None = Query(None, max_length=100, description="Texto en la nota o en el nombre de la categoría"),
     min_amount: Decimal | None = Query(None, ge=0),
     max_amount: Decimal | None = Query(None, ge=0),
+    tag: str | None = Query(None, max_length=40, description="Nombre de una etiqueta"),
     uncategorized: bool = False,
     hide_transfers: bool = False,
     limit: int = Query(200, ge=1, le=1000),
@@ -156,6 +159,10 @@ def list_transactions(
         conds.append(Transaction.amount <= max_amount)
     if hide_transfers:
         conds.append(Transaction.transfer_id.is_(None))
+    if tag and normalize(tag):
+        tagged = (select(transaction_tags.c.transaction_id).join(Tag, Tag.id == transaction_tags.c.tag_id)
+                  .where(Tag.user_id == user.id, Tag.name == normalize(tag)))
+        conds.append(Transaction.id.in_(tagged))
     if q and q.strip():
         like = f"%{q.strip().lower()}%"
         by_category = select(Category.id).where(Category.user_id == user.id, func.lower(Category.name).like(like))
@@ -173,8 +180,9 @@ def create_transaction(data: TransactionIn, db: Session = Depends(get_db), user:
     owned(db, Account, data.account_id, user)
     if data.category_id:
         owned(db, Category, data.category_id, user)
-    tx = Transaction(user_id=user.id, **data.model_dump())
+    tx = Transaction(user_id=user.id, **data.model_dump(exclude={"tags"}))
     db.add(tx)
+    set_tags(db, user.id, tx, data.tags)
     apply_to_card(db, tx.account_id, tx.kind, tx.amount, +1)
     db.commit()
     db.refresh(tx)
@@ -200,6 +208,8 @@ def update_transaction(tx_id: int, data: TransactionUpdate,
             setattr(tx, field, changes[field])
     if data.clear_category:
         tx.category_id = None
+    if data.tags is not None:
+        set_tags(db, user.id, tx, data.tags)
     apply_to_card(db, tx.account_id, tx.kind, tx.amount, +1)
     db.commit()
     db.refresh(tx)

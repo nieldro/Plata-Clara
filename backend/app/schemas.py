@@ -87,11 +87,13 @@ class TransactionIn(BaseModel):
     amount: Decimal = Field(gt=0)
     date: date
     note: str = ""
+    tags: list[str] = []
 
 
 class TransactionOut(ORM, TransactionIn):
     id: int
     transfer_id: str | None = None
+    tags: list[str] = Field(default_factory=list, validation_alias="tag_names")
 
 
 class TransactionUpdate(BaseModel):
@@ -103,6 +105,7 @@ class TransactionUpdate(BaseModel):
     amount: Decimal | None = Field(default=None, gt=0)
     date: _dt.date | None = None
     note: str | None = Field(default=None, max_length=255)
+    tags: list[str] | None = None  # None = no cambiar; [] = quitar todas
 
 
 class TransferIn(BaseModel):

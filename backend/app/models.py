@@ -1,12 +1,19 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Numeric, String, Table,
+                        UniqueConstraint, func)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
 
 Money = Numeric(14, 2)
+
+transaction_tags = Table(
+    "transaction_tags", Base.metadata,
+    Column("transaction_id", ForeignKey("transactions.id"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id"), primary_key=True),
+)
 
 
 class User(Base):
@@ -58,6 +65,20 @@ class Transaction(Base):
     note: Mapped[str] = mapped_column(String(255), default="")
     # Las dos patas de una transferencia comparten este id; no cuentan como ingreso ni gasto.
     transfer_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    tags: Mapped[list["Tag"]] = relationship(secondary=transaction_tags, lazy="selectin")
+
+    @property
+    def tag_names(self) -> list[str]:
+        return sorted(t.name for t in self.tags)
+
+
+class Tag(Base):
+    """Etiqueta libre para seguir un proyecto o tema (viaje-cartagena, regalo-mama...)."""
+    __tablename__ = "tags"
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(30))
 
 
 class Debt(Base):
