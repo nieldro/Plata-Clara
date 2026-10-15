@@ -18,6 +18,7 @@ type Props = {
   accountFilter: number | null;
   version: number;
   onEdit: (t: Tx) => void;
+  onReceipts: (t: Tx) => void;
   onChanged: () => void;
   onClearAccount: () => void;
 };
@@ -38,7 +39,7 @@ function toQuery(f: Filters, accountFilter: number | null, offset: number) {
   return p.toString();
 }
 
-export default function TransactionHistory({ accounts, cats, tagNames, insts, accountFilter, version, onEdit, onChanged, onClearAccount }: Props) {
+export default function TransactionHistory({ accounts, cats, tagNames, insts, accountFilter, version, onEdit, onReceipts, onChanged, onClearAccount }: Props) {
   const [f, setF] = useState<Filters>(EMPTY);
   const [debouncedQ, setDebouncedQ] = useState("");
   const [items, setItems] = useState<Tx[]>([]);
@@ -152,6 +153,11 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
                   </td>
                   <td className={`num ${t.kind === "income" ? "pos" : "neg"}`}>{t.kind === "income" ? "+" : "−"}{money(t.amount)}</td>
                   <td className="actions">
+                    {!t.transfer_id && (
+                      <button className={`link ${t.attachments ? "has-files" : ""}`} title="Recibos" onClick={() => onReceipts(t)}>
+                        📎{t.attachments > 0 && <sup>{t.attachments}</sup>}
+                      </button>
+                    )}
                     {!t.transfer_id && <button className="link" title="Editar" onClick={() => onEdit(t)}>✎</button>}
                     <button className="link" title="Borrar" onClick={() => api.del(`/transactions/${t.id}`).then(onChanged)}>✕</button>
                   </td>

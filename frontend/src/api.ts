@@ -42,6 +42,11 @@ export async function getPage<T>(path: string): Promise<{ items: T[]; total: num
   return { items, total: Number(res.headers.get("X-Total-Count") ?? items.length) };
 }
 
+/** Descarga un archivo protegido (lleva el token) como Blob, para mostrarlo o abrirlo. */
+export async function getBlob(path: string): Promise<Blob> {
+  return (await send(path)).blob();
+}
+
 export const api = {
   get: <T,>(p: string) => request<T>(p),
   upload: <T,>(p: string, form: FormData) => request<T>(p, { method: "POST", body: form }),
@@ -83,8 +88,9 @@ export type Category = { id: number; name: string; kind: "income" | "expense" };
 export type Tx = {
   id: number; account_id: number; category_id: number | null;
   kind: "income" | "expense"; amount: number; date: string; note: string; transfer_id?: string | null;
-  tags: string[];
+  tags: string[]; attachments: number;
 };
+export type Attachment = { id: number; filename: string; content_type: string; size: number; created_at: string };
 export type TagSummary = { id: number; name: string; count: number; income: number | string; expense: number | string };
 export const splitTags = (v: FormDataEntryValue | null) => String(v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 export type Debt = {

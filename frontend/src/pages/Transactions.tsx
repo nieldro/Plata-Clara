@@ -3,6 +3,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, money, splitTags, TagSummary, Tx } from "../api";
 import AccountModal from "../components/AccountModal";
 import EditTransactionModal from "../components/EditTransactionModal";
+import ReceiptsModal from "../components/ReceiptsModal";
 import RulesSection from "../components/RulesSection";
 import TagInput from "../components/TagInput";
 import TransactionHistory from "../components/TransactionHistory";
@@ -15,6 +16,7 @@ export default function Transactions() {
   const [filter, setFilter] = useState<number | null>(null);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Tx | null>(null);
+  const [receiptsFor, setReceiptsFor] = useState<Tx | null>(null);
   const [error, setError] = useState("");
 
   const [version, setVersion] = useState(0); // al cambiar, el historial se vuelve a pedir
@@ -261,10 +263,14 @@ export default function Transactions() {
 
       <TransactionHistory
         accounts={accounts} cats={cats} insts={insts} tagNames={tagNames} accountFilter={filter} version={version}
-        onEdit={setEditing} onChanged={load} onClearAccount={() => setFilter(null)}
+        onEdit={setEditing} onReceipts={setReceiptsFor} onChanged={load} onClearAccount={() => setFilter(null)}
       />
 
       <AnimatePresence>
+        {receiptsFor && (
+          <ReceiptsModal key="receipts" tx={receiptsFor} onClose={() => setReceiptsFor(null)}
+            onChanged={() => setVersion((v) => v + 1)} />
+        )}
         {editing && (
           <EditTransactionModal key="edit" tx={editing} accounts={accounts} cats={cats} suggestions={tagNames}
             onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />
