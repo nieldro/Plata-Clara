@@ -26,7 +26,7 @@ SYNONYMS = {
     "credit": ["credito", "creditos", "abono", "abonos", "deposito", "depositos", "ingreso", "ingresos",
                "entrada", "credit", "valor credito", "valor abono"],
     "amount": ["valor", "monto", "importe", "amount", "valor transaccion", "valor de la transaccion", "total"],
-    "description": ["descripcion", "detalle", "concepto", "description", "referencia", "movimiento",
+    "description": ["descripcion", "detalle", "concepto", "description", "referencia", "movimiento", "nota", "notas",
                     "transaccion", "observaciones", "comercio", "establecimiento", "nombre"],
 }
 FIELD_ORDER = ["date", "debit", "credit", "amount", "description"]  # el orden evita que «valor débito» caiga en monto

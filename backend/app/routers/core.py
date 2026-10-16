@@ -1,4 +1,5 @@
 import uuid
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -126,8 +127,53 @@ def delete_category(category_id: int, db: Session = Depends(get_db), user: User 
 
 
 # ---------- movimientos ----------
-@router.get("/transactions", response_model=list[TransactionOut])
-def list_transactions(
+@dataclass
+class TxFilters:
+    """Filtros del historial. Los comparten el listado y la exportación."""
+    date_from: date | None = None
+    date_to: date | None = None
+    account_id: int | None = None
+    category_id: int | None = None
+    kind: str | None = None
+    q: str | None = None
+    min_amount: Decimal | None = None
+    max_amount: Decimal | None = None
+    tag: str | None = None
+    uncategorized: bool = False
+    hide_transfers: bool = False
+
+    def conditions(self, user_id: int) -> list:
+        conds = [Transaction.user_id == user_id]
+        if self.date_from:
+            conds.append(Transaction.date >= self.date_from)
+        if self.date_to:
+            conds.append(Transaction.date <= self.date_to)
+        if self.account_id:
+            conds.append(Transaction.account_id == self.account_id)
+        if self.category_id:
+            conds.append(Transaction.category_id == self.category_id)
+        if self.uncategorized:
+            conds.append(Transaction.category_id.is_(None))
+        if self.kind:
+            conds.append(Transaction.kind == self.kind)
+        if self.min_amount is not None:
+            conds.append(Transaction.amount >= self.min_amount)
+        if self.max_amount is not None:
+            conds.append(Transaction.amount <= self.max_amount)
+        if self.hide_transfers:
+            conds.append(Transaction.transfer_id.is_(None))
+        if self.tag and normalize(self.tag):
+            tagged = (select(transaction_tags.c.transaction_id).join(Tag, Tag.id == transaction_tags.c.tag_id)
+                      .where(Tag.user_id == user_id, Tag.name == normalize(self.tag)))
+            conds.append(Transaction.id.in_(tagged))
+        if self.q and self.q.strip():
+            like = f"%{self.q.strip().lower()}%"
+            by_category = select(Category.id).where(Category.user_id == user_id, func.lower(Category.name).like(like))
+            conds.append(or_(func.lower(Transaction.note).like(like), Transaction.category_id.in_(by_category)))
+        return conds
+
+
+def tx_filters(
     date_from: date | None = None,
     date_to: date | None = None,
     account_id: int | None = None,
@@ -139,6 +185,18 @@ def list_transactions(
     tag: str | None = Query(None, max_length=40, description="Nombre de una etiqueta"),
     uncategorized: bool = False,
     hide_transfers: bool = False,
+) -> TxFilters:
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(422, "La fecha inicial no puede ser posterior a la final")
+    if min_amount is not None and max_amount is not None and min_amount > max_amount:
+        raise HTTPException(422, "El monto mínimo no puede superar al máximo")
+    return TxFilters(date_from, date_to, account_id, category_id, kind, q, min_amount, max_amount, tag,
+                     uncategorized, hide_transfers)
+
+
+@router.get("/transactions", response_model=list[TransactionOut])
+def list_transactions(
+    f: TxFilters = Depends(tx_filters),
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     response: Response = None,
@@ -146,39 +204,7 @@ def list_transactions(
     user: User = Depends(current_user),
 ):
     """Historial con filtros combinables. El total sin paginar va en la cabecera X-Total-Count."""
-    if date_from and date_to and date_from > date_to:
-        raise HTTPException(422, "La fecha inicial no puede ser posterior a la final")
-    if min_amount is not None and max_amount is not None and min_amount > max_amount:
-        raise HTTPException(422, "El monto mínimo no puede superar al máximo")
-
-    conds = [Transaction.user_id == user.id]
-    if date_from:
-        conds.append(Transaction.date >= date_from)
-    if date_to:
-        conds.append(Transaction.date <= date_to)
-    if account_id:
-        conds.append(Transaction.account_id == account_id)
-    if category_id:
-        conds.append(Transaction.category_id == category_id)
-    if uncategorized:
-        conds.append(Transaction.category_id.is_(None))
-    if kind:
-        conds.append(Transaction.kind == kind)
-    if min_amount is not None:
-        conds.append(Transaction.amount >= min_amount)
-    if max_amount is not None:
-        conds.append(Transaction.amount <= max_amount)
-    if hide_transfers:
-        conds.append(Transaction.transfer_id.is_(None))
-    if tag and normalize(tag):
-        tagged = (select(transaction_tags.c.transaction_id).join(Tag, Tag.id == transaction_tags.c.tag_id)
-                  .where(Tag.user_id == user.id, Tag.name == normalize(tag)))
-        conds.append(Transaction.id.in_(tagged))
-    if q and q.strip():
-        like = f"%{q.strip().lower()}%"
-        by_category = select(Category.id).where(Category.user_id == user.id, func.lower(Category.name).like(like))
-        conds.append(or_(func.lower(Transaction.note).like(like), Transaction.category_id.in_(by_category)))
-
+    conds = f.conditions(user.id)
     total = db.scalar(select(func.count()).select_from(Transaction).where(*conds))
     if response is not None:
         response.headers["X-Total-Count"] = str(total)
