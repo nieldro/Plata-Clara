@@ -3,15 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 
 from . import models  # noqa: F401  (registra las tablas)
-from .db import Base, engine
+from .migrate import run_migrations
 from .routers import (assistant, attachments, auth, budgets, core, debts, imports, loans, notifications,
                       recurring, rules, savings, simulator, tags)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Para producción reemplazar por migraciones con Alembic.
-    Base.metadata.create_all(engine)
+    run_migrations()  # lleva la base al esquema actual (crea las tablas la primera vez)
     yield
 
 
