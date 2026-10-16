@@ -10,9 +10,13 @@ App web para registrar movimientos, manejar cuentas, tarjetas de crédito y cré
 | Backend | Python 3.12 + FastAPI + SQLAlchemy 2 |
 | Base de datos | PostgreSQL 16 |
 | Auth | JWT + bcrypt |
-| Infra | Docker Compose |
+| Migraciones | Alembic |
+| Informes | ReportLab (PDF) · openpyxl (Excel) |
+| Infra | Docker Compose · nginx |
 
 ## Arrancar
+
+**Con Docker (recomendado)**
 ```powershell
 copy .env.example .env      # edita las claves
 docker compose up --build
@@ -20,16 +24,44 @@ docker compose up --build
 - App: http://localhost:5173
 - API + documentación Swagger: http://localhost:8000/docs
 
+**Sin Docker (desarrollo)**
+```powershell
+# Backend (usa SQLite por defecto; crea las tablas solo, por migraciones)
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+
+# Frontend (en otra terminal)
+cd frontend
+npm install
+$env:API_URL = "http://localhost:8000"; npm run dev
+```
+
+## Migraciones de la base de datos
+El esquema se versiona con Alembic y **se aplica solo al arrancar la API**. Cuando cambies un modelo:
+```powershell
+cd backend
+.\.venv\Scripts\alembic.exe revision --autogenerate -m "describe el cambio"   # genera la migración
+.\.venv\Scripts\alembic.exe upgrade head                                       # la aplica (la API también lo hace)
+```
+Revisa siempre el archivo generado en `backend/alembic/versions/`. Una prueba (`tests/test_migrations.py`) **falla si un
+modelo cambia sin su migración**, así el esquema real y el del código no se separan.
+
+Una base de desarrollo creada antes de las migraciones se rechaza con un mensaje claro: bórrala (`backend/dev.db`).
+
 ## Estructura
 ```
 backend/app/
-  models.py          tablas
-  schemas.py         validación de entrada/salida
-  services/finance.py  matemática financiera (tasas, cuotas, amortización, ahorro)
-  services/          finance, queries, ledger, recurring, notifications, assistant
-  routers/           auth, core (cuentas/movimientos/transferencias), budgets, recurring,
-                     notifications, assistant, debts, savings, simulator
-frontend/src/pages/  Resumen, Cuentas y movimientos, Presupuestos, Deudas, Ahorro, Asistente, Simulador
+  models.py          tablas                       migrate.py   aplica Alembic al arrancar
+  schemas.py         validación de entrada/salida clock.py     «hoy» en la zona horaria del usuario
+  services/          finance (matemática), queries, ledger, recurring, notifications, assistant, rules, importer,
+                     exporter, report (PDF), loans, tags, uploads, account, ratelimit
+  routers/           auth, account, core (cuentas/movimientos/transferencias), exports, reports, budgets, recurring,
+                     notifications, assistant, tags, rules, imports, attachments, loans, debts, savings, simulator
+backend/alembic/     migraciones
+frontend/src/pages/  Resumen, Cuentas y movimientos, Importar extracto, Quién me debe, Presupuestos, Deudas, Ahorro,
+                     Asistente, Simulador, Ajustes
 ```
 
 ## Cómo se calculan los intereses
@@ -85,7 +117,21 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Presupuestos, Deudas, Ahorr
 - **Dividir una cuenta:** pagaste entre varios; solo tu parte es gasto (y entra a tu presupuesto), lo demás queda como
   «te deben». Partes iguales (los centavos sobrantes te tocan a ti) o montos distintos.
 
+### Informes, exportación y tu cuenta
+- **Informe mensual en PDF** (pantalla Resumen): resumen del mes, comparación con el mes anterior, gasto por categoría
+  contra tu presupuesto, mayores gastos, cuentas y patrimonio, y préstamos pendientes.
+- **Exportar a Excel y CSV** (botones en el historial): respeta los filtros que tengas aplicados. El CSV usa `;`, coma
+  decimal y UTF-8 con BOM para abrirse bien en Excel en español, y se puede volver a importar. Un texto que empiece con
+  `=`, `+`, `-` o `@` se neutraliza para que Excel no lo ejecute como fórmula.
+- **Ajustes:** cambiar contraseña (cierra las otras sesiones), descargar todos tus datos en JSON y borrar tu cuenta con
+  todo lo que contiene (incluidos los recibos del disco).
+- **Zona horaria:** «hoy» y «este mes» se calculan en `TIMEZONE` (por defecto `America/Bogota`), no en la hora del
+  servidor, que en Docker es UTC. Sin esto, después de las 7 p. m. la app creería que ya es el día siguiente.
+
 ## Seguridad
+- **Límite de intentos:** 5 fallos de inicio de sesión por IP y correo (30 por IP) en 15 minutos bloquean con un 429; un
+  correo inexistente se bloquea igual que uno real, y la contraseña correcta tampoco entra mientras dura el bloqueo.
+  Máx. 10 registros por hora y por IP. El limitador vive en memoria: sirve para una sola instancia de la API.
 - **Sin credenciales en el repositorio:** `.env` está en `.gitignore`; solo se sube `.env.example` con valores de ejemplo.
   Un escaneo con gitleaks (`.github/workflows/secrets.yml`) revisa toda la historia en cada push.
 - Con `ENVIRONMENT=production` la API **no arranca** si `SECRET_KEY` es la de desarrollo o tiene menos de 32 caracteres.
@@ -98,18 +144,30 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Presupuestos, Deudas, Ahorr
 
 ## Pruebas y CI
 ```powershell
-cd backend; python -m pytest -q     # 136 pruebas de API, importador, recibos, préstamos y matemática financiera
+cd backend; .\.venv\Scripts\python.exe -m pytest -q     # 184 pruebas
 ```
-Las pruebas corren sobre SQLite en memoria **con llaves foráneas activadas** (como PostgreSQL) y una carpeta de
-archivos nueva en cada prueba. GitHub Actions (`.github/workflows/ci.yml`) corre las pruebas del backend y el build del
-frontend en cada push.
+Las pruebas corren sobre SQLite en memoria **con llaves foráneas activadas** (como PostgreSQL), una carpeta de archivos
+nueva en cada prueba, y verifican que las migraciones coincidan con los modelos. GitHub Actions corre en cada push:
+- `ci.yml`: pruebas del backend, build del frontend y **construcción de las imágenes de Docker** de producción.
+- `secrets.yml`: escaneo de secretos (gitleaks) sobre toda la historia.
 
-> **Nota:** las pruebas usan SQLite; el despliegue con Docker usa PostgreSQL. Las consultas son estándar SQLAlchemy,
-> pero conviene correr `docker compose up` y probar los flujos principales contra PostgreSQL antes de producción.
+> **Nota:** las pruebas usan SQLite; el despliegue usa PostgreSQL. Las consultas son estándar SQLAlchemy, pero conviene
+> probar los flujos principales contra PostgreSQL (`docker compose up`) antes de guardar datos reales.
+
+## Despliegue en tu propio servidor
+```powershell
+# .env: ENVIRONMENT=production, SECRET_KEY de 32+ caracteres aleatorios, contraseña de la base, TIMEZONE
+docker compose -f docker-compose.prod.yml up -d --build
+```
+Solo queda expuesta la web (nginx, puerto 80 o `WEB_PORT`); la API y la base viven en la red interna de Docker. nginx
+añade cabeceras de seguridad (CSP, X-Frame-Options, nosniff…) y reenvía `/api` a la API **sobrescribiendo**
+`X-Forwarded-For` con la IP real, para que el límite de intentos no se pueda esquivar con una IP inventada.
+**Pon HTTPS delante** (Caddy, Cloudflare o un balanceador) antes de usarla fuera de tu casa: sin HTTPS la contraseña y la
+sesión viajan sin cifrar. Si el proxy HTTPS es un servicio de nube compartido, la «IP real» que ve nginx será la del
+proxy y el límite de intentos se aplicaría en conjunto; en ese caso conviene ajustar `nginx.conf`.
 
 ## Pendiente / siguientes pasos
-- Migraciones con Alembic: hoy se usa `create_all`; al cambiar columnas las bases existentes no se actualizan solas
-  (en desarrollo, borrar `dev.db`)
-- Exportar a Excel/PDF
-- Build de producción (nginx sirviendo el frontend)
-- Limitar intentos de inicio de sesión (rate limiting) antes de exponerla a internet
+- Probar el despliegue de producción en un servidor real (las imágenes se construyen en el CI, pero el flujo completo
+  con HTTPS no se ha ejecutado)
+- Pruebas de interfaz de punta a punta (Playwright)
+- Adjuntos y límite de intentos para varias réplicas (hoy en memoria / disco local)
