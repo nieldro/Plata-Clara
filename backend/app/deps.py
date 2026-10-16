@@ -1,19 +1,24 @@
+from datetime import timezone
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from .db import get_db
 from .models import User
-from .security import decode_token
+from .security import decode_token_full
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)) -> User:
-    user_id = decode_token(token)
-    user = db.get(User, user_id) if user_id else None
+    decoded = decode_token_full(token)
+    user = db.get(User, decoded[0]) if decoded else None
     if not user:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sesión inválida")
+    changed = user.password_changed_at
+    if changed and decoded[1] < int(changed.replace(tzinfo=timezone.utc).timestamp()):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Tu contraseña cambió: inicia sesión de nuevo")
     return user
 
 

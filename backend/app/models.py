@@ -24,6 +24,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     name: Mapped[str] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    # Las sesiones (tokens) emitidas antes de este momento dejan de valer al cambiar la contraseña.
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Account(Base):

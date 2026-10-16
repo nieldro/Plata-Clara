@@ -15,13 +15,26 @@ def verify_password(password: str, hashed: str) -> bool:
 
 
 def create_token(user_id: int) -> str:
-    exp = datetime.now(timezone.utc) + timedelta(minutes=settings.token_minutes)
-    return jwt.encode({"sub": str(user_id), "exp": exp}, settings.secret_key, algorithm="HS256")
+    now = datetime.now(timezone.utc)
+    payload = {"sub": str(user_id), "iat": int(now.timestamp()),
+               "exp": now + timedelta(minutes=settings.token_minutes)}
+    return jwt.encode(payload, settings.secret_key, algorithm="HS256")
+
+
+def decode_token_full(token: str) -> tuple[int, int] | None:
+    """(id de usuario, momento de emisión en segundos) o None si el token no vale."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+        return int(payload["sub"]), int(payload.get("iat", 0))
+    except (jwt.PyJWTError, KeyError, ValueError):
+        return None
 
 
 def decode_token(token: str) -> int | None:
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
-        return int(payload["sub"])
-    except (jwt.PyJWTError, KeyError, ValueError):
-        return None
+    decoded = decode_token_full(token)
+    return decoded[0] if decoded else None
+
+
+def utcnow_naive() -> datetime:
+    """Ahora en UTC sin zona horaria (como se guardan las fechas en la base)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
