@@ -1,0 +1,11 @@
+# Lo que nunca debe entrar a la imagen: entornos, bases locales, archivos subidos, secretos y cachés.
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+uploads/
+.env
+.env.*
+tests/
+.git
