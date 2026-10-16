@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import { Account, api, Debt, localMonth, money } from "../api";
+import { Account, api, Debt, download, localMonth, money } from "../api";
 import CountUp from "../components/CountUp";
 import { GOLD, MUTED, NEG, PIE_COLORS, tooltipStyle } from "../theme";
 
@@ -19,6 +19,21 @@ export default function Dashboard() {
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
+  const [reportMonth, setReportMonth] = useState(month);
+  const [reporting, setReporting] = useState(false);
+  const [reportError, setReportError] = useState("");
+
+  async function downloadReport() {
+    setReporting(true);
+    setReportError("");
+    try {
+      await download(`/reports/monthly?month=${reportMonth}`, `plata-clara-informe-${reportMonth}.pdf`);
+    } catch (err) {
+      setReportError((err as Error).message);
+    } finally {
+      setReporting(false);
+    }
+  }
 
   useEffect(() => {
     api.get<Summary>(`/summary?month=${month}`).then(setS);
@@ -51,6 +66,18 @@ export default function Dashboard() {
             <b className={t.cls}><CountUp value={t.value} format={fmt} /></b>
           </div>
         ))}
+      </div>
+
+      <div className="card report-card">
+        <div>
+          <h2>Informe mensual</h2>
+          <p className="empty">Un PDF listo para imprimir o guardar: resumen, gasto por categoría con tus presupuestos, mayores gastos y patrimonio.</p>
+        </div>
+        <div className="report-actions">
+          <input type="month" value={reportMonth} max={month} onChange={(e) => e.target.value && setReportMonth(e.target.value)} aria-label="Mes del informe" />
+          <button disabled={reporting} onClick={downloadReport}>{reporting ? "Generando…" : "⬇ Descargar PDF"}</button>
+        </div>
+        {reportError && <p className="error">{reportError}</p>}
       </div>
 
       <div className="two">

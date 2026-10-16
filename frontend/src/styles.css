@@ -139,6 +139,11 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.report-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.report-card h2 { margin-bottom: 4px; }
+.report-card .empty { margin: 0; max-width: 520px; }
+.report-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.report-card .error { flex-basis: 100%; }
 .export-btns { margin-left: auto; display: inline-flex; gap: 6px; }
 .export-btns .btn-ghost { padding: 7px 14px; font-size: 13px; }
 .card.danger { border-color: rgba(229, 138, 138, 0.3); }
