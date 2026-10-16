@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { api, Debt, money, Plan } from "../api";
+import { api, Debt, localDate, money, Plan } from "../api";
 import ScheduleTable from "../components/ScheduleTable";
 
 export default function Debts() {
@@ -44,7 +44,7 @@ export default function Debts() {
   async function pay(id: number) {
     const amount = Number(prompt("¿Cuánto pagaste?"));
     if (!amount) return;
-    await api.post(`/debts/${id}/payments`, { amount, date: new Date().toISOString().slice(0, 10) });
+    await api.post(`/debts/${id}/payments`, { amount, date: localDate() });
     load();
   }
 

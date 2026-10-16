@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Account, api, Category, loadInstitutions, money } from "../api";
+import { Account, api, Category, loadInstitutions, localDate, money } from "../api";
 
 type Rec = {
   id: number; account_id: number; category_id: number | null; kind: "income" | "expense";
@@ -63,7 +63,7 @@ export default function RecurringSection() {
         <select name="frequency" defaultValue="monthly">
           {Object.entries(FREQ).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <input name="start" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required title="Primera vez" />
+        <input name="start" type="date" defaultValue={localDate()} required title="Primera vez" />
         <input name="note" placeholder="Descripción (ej. Arriendo)" />
         <button>Crear</button>
       </form>

@@ -4,6 +4,13 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t: string | null) =>
   t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY);
 
+/** Fecha de hoy (AAAA-MM-DD) en la hora del usuario. `toISOString()` da la de UTC: después de las 7 p. m. en Colombia ya sería mañana. */
+export const localDate = (d: Date = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** Mes actual (AAAA-MM) en la hora del usuario. */
+export const localMonth = (d: Date = new Date()) => localDate(d).slice(0, 7);
+
 export const money = (n: number | string) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(n));
 

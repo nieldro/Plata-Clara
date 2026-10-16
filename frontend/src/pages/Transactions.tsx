@@ -1,6 +1,6 @@
 import { AnimatePresence } from "framer-motion";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, money, splitTags, TagSummary, Tx } from "../api";
+import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, localDate, money, splitTags, TagSummary, Tx } from "../api";
 import AccountModal from "../components/AccountModal";
 import EditTransactionModal from "../components/EditTransactionModal";
 import ReceiptsModal from "../components/ReceiptsModal";
@@ -186,7 +186,7 @@ export default function Transactions() {
               <option value="">Categoría…</option>
               {cats.filter((c) => c.kind === kind).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+            <input name="date" type="date" defaultValue={localDate()} required />
             <input name="note" placeholder="Nota (ej. Éxito, Uber, Netflix)" value={note} onChange={(e) => setNote(e.target.value)} />
             <TagInput suggestions={tagNames} />
             <button>Guardar</button>
@@ -212,7 +212,7 @@ export default function Transactions() {
               {accounts.map((a) => <option key={a.id} value={a.id}>{entityName(a)} · {a.name}</option>)}
             </select>
             <input name="amount" type="number" step="0.01" min="0.01" placeholder="Monto" required />
-            <input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+            <input name="date" type="date" defaultValue={localDate()} required />
             <input name="note" placeholder="Nota (opcional)" />
             <button>Transferir</button>
           </form>

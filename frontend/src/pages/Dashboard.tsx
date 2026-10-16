@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import { Account, api, Debt, money } from "../api";
+import { Account, api, Debt, localMonth, money } from "../api";
 import CountUp from "../components/CountUp";
 import { GOLD, MUTED, NEG, PIE_COLORS, tooltipStyle } from "../theme";
 
@@ -14,7 +14,7 @@ const monthLabel = (m: string) =>
   new Date(Number(m.slice(0, 4)), Number(m.slice(5)) - 1).toLocaleDateString("es-CO", { month: "short" });
 
 export default function Dashboard() {
-  const month = new Date().toISOString().slice(0, 7);
+  const month = localMonth();
   const [s, setS] = useState<Summary | null>(null);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);

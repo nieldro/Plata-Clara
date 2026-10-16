@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Account, api, Category, money } from "../api";
+import { Account, api, Category, localDate, money } from "../api";
 import CountUp from "../components/CountUp";
 
 type Payment = { id: number; amount: number; date: string; note: string; in_account: boolean };
@@ -10,7 +10,7 @@ type Loan = {
 type Summary = { owed_to_me: number; i_owe: number; net: number; overdue: number; people: { person: string; net: number }[] };
 type Row = { person: string; amount: string };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => localDate();
 
 export default function Loans() {
   const [loans, setLoans] = useState<Loan[]>([]);

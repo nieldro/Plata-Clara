@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { api, Category, money } from "../api";
+import { api, Category, localMonth, money } from "../api";
 import RecurringSection from "../components/RecurringSection";
 import { EASE } from "../theme";
 
@@ -16,7 +16,7 @@ const label = (month: string) =>
 export const levelOf = (pct: number) => (pct > 100 ? "over" : pct >= 80 ? "warn" : "ok");
 
 export default function Budgets() {
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(localMonth());
   const [items, setItems] = useState<Item[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [error, setError] = useState("");
