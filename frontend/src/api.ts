@@ -47,6 +47,19 @@ export async function getBlob(path: string): Promise<Blob> {
   return (await send(path)).blob();
 }
 
+/** Descarga un archivo del servidor y lo guarda en el computador con el nombre que indique la API. */
+export async function download(path: string, fallbackName = "descarga"): Promise<void> {
+  const res = await send(path);
+  const blob = await res.blob();
+  const name = /filename="?([^";]+)"?/i.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement("a"), { href: url, download: name });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
 export const api = {
   get: <T,>(p: string) => request<T>(p),
   upload: <T,>(p: string, form: FormData) => request<T>(p, { method: "POST", body: form }),

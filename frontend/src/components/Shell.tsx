@@ -8,6 +8,7 @@ import Import from "../pages/Import";
 import Loans from "../pages/Loans";
 import Debts from "../pages/Debts";
 import Savings from "../pages/Savings";
+import Settings from "../pages/Settings";
 import Simulator from "../pages/Simulator";
 import Transactions from "../pages/Transactions";
 import { EASE } from "../theme";
@@ -24,6 +25,7 @@ const TABS: { key: string; label: string; icon: ReactNode; page: () => JSX.Eleme
   { key: "savings", label: "Ahorro", icon: Icons.target, page: Savings },
   { key: "assistant", label: "Asistente", icon: Icons.spark, page: Assistant },
   { key: "sim", label: "Simulador", icon: Icons.calc, page: Simulator },
+  { key: "settings", label: "Ajustes", icon: Icons.gear, page: Settings },
 ];
 
 export default function Shell({ onLogout }: { onLogout: () => void }) {

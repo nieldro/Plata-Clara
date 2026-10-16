@@ -139,6 +139,11 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.export-btns { margin-left: auto; display: inline-flex; gap: 6px; }
+.export-btns .btn-ghost { padding: 7px 14px; font-size: 13px; }
+.card.danger { border-color: rgba(229, 138, 138, 0.3); }
+.btn-danger { background: linear-gradient(135deg, #e58a8a, #c45b5b); color: #1c0c0c; }
+.btn-danger:hover { box-shadow: 0 8px 24px -8px rgba(229, 138, 138, 0.55); }
 .block { display: block; }
 .loan { border-top: 1px solid var(--line); }
 .loan:first-of-type { border-top: 0; }

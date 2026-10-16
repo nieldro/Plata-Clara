@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Account, api, Category, getPage, Institution, money, Tx } from "../api";
+import { Account, api, Category, download, getPage, Institution, money, Tx } from "../api";
 import InstitutionLogo from "./InstitutionLogo";
 
 const PAGE = 50;
@@ -23,8 +23,8 @@ type Props = {
   onClearAccount: () => void;
 };
 
-function toQuery(f: Filters, accountFilter: number | null, offset: number) {
-  const p = new URLSearchParams({ limit: String(PAGE), offset: String(offset) });
+function toQuery(f: Filters, accountFilter: number | null, offset: number, paged = true) {
+  const p = new URLSearchParams(paged ? { limit: String(PAGE), offset: String(offset) } : {});
   if (f.q.trim()) p.set("q", f.q.trim());
   if (f.date_from) p.set("date_from", f.date_from);
   if (f.date_to) p.set("date_to", f.date_to);
@@ -82,6 +82,20 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
   const acc = (id: number) => accounts.find((a) => a.id === id);
   const catName = (id: number | null) => cats.find((c) => c.id === id)?.name ?? "—";
 
+  const [exporting, setExporting] = useState(false);
+  async function exportAs(format: "csv" | "xlsx") {
+    setExporting(true);
+    try {
+      // exporta lo que estás viendo: los mismos filtros, sin paginar
+      await download(`/export/transactions?format=${format}&${toQuery(effective, accountFilter, 0, false)}`);
+      setError("");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const sum = (kind: "income" | "expense") =>
     items.filter((t) => !t.transfer_id && t.kind === kind).reduce((a, t) => a + Number(t.amount), 0);
 
@@ -121,6 +135,11 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
         <input type="number" min="0" placeholder="Monto mín." value={f.min_amount} onChange={set("min_amount")} />
         <input type="number" min="0" placeholder="Monto máx." value={f.max_amount} onChange={set("max_amount")} />
         {active && <button className="link" onClick={() => setF(EMPTY)}>Limpiar filtros</button>}
+        <span className="export-btns">
+          <button className="btn-ghost" disabled={exporting || total === 0} onClick={() => exportAs("xlsx")}
+            title="Descarga lo que ves ahora (con los filtros aplicados)">⬇ Excel</button>
+          <button className="btn-ghost" disabled={exporting || total === 0} onClick={() => exportAs("csv")}>⬇ CSV</button>
+        </span>
       </div>
 
       <p className="summary-line">
