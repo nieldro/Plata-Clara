@@ -16,6 +16,15 @@ from sqlalchemy.pool import StaticPool
 from app.config import settings
 from app.db import Base, get_db, make_sqlite_unicode_aware
 from app.main import app
+from app.services import ratelimit
+
+
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits():
+    """Cada prueba empieza sin intentos fallidos acumulados."""
+    ratelimit.clear_all()
+    yield
+    ratelimit.clear_all()
 
 
 @pytest.fixture()
