@@ -1,3 +1,5 @@
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
@@ -10,6 +12,7 @@ class Settings(BaseSettings):
     secret_key: str = DEV_SECRET
     token_minutes: int = 60 * 12
     environment: str = "development"  # production → exige configuración segura
+    timezone: str = "America/Bogota"  # zona en la que «hoy» y «este mes» se calculan (IANA)
     upload_dir: str = "uploads"
     max_upload_mb: int = 5
     # Límite de intentos (ver services/ratelimit.py)
@@ -17,6 +20,14 @@ class Settings(BaseSettings):
     login_ip_max_failures: int = 30      # fallos permitidos por IP (cualquier correo)
     login_window_seconds: int = 15 * 60
     register_max_per_hour: int = 10
+
+    @model_validator(mode="after")
+    def _valid_timezone(self):
+        try:
+            ZoneInfo(self.timezone)
+        except (ZoneInfoNotFoundError, ValueError) as e:
+            raise ValueError(f"TIMEZONE «{self.timezone}» no existe (usa un nombre IANA, p. ej. America/Bogota)") from e
+        return self
 
     @model_validator(mode="after")
     def _require_real_secret_in_production(self):

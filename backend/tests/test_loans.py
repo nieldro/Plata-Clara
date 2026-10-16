@@ -1,9 +1,10 @@
 from datetime import date, timedelta
+from app.clock import today as clock_today
 from decimal import Decimal
 
 from conftest import category_id
 
-TODAY = date.today().isoformat()
+TODAY = clock_today().isoformat()
 
 
 def new_loan(client, auth, **extra):
@@ -18,7 +19,7 @@ def balance(client, auth, name="Ahorros"):
 
 
 def month_summary(client, auth):
-    return client.get(f"/api/summary?month={date.today():%Y-%m}", headers=auth).json()
+    return client.get(f"/api/summary?month={clock_today():%Y-%m}", headers=auth).json()
 
 
 def test_lending_with_account_moves_balance_but_is_not_an_expense(client, auth, bank):
@@ -62,7 +63,7 @@ def test_cannot_overpay_and_payment_validation(client, auth, bank):
     assert client.post(url, headers=auth, json={"amount": 0, "date": TODAY}).status_code == 422
     assert client.post(url, headers=auth, json={"amount": 5, "date": TODAY, "account_id": 999}).status_code == 404
     assert client.post("/api/loans", headers=auth, json={"person": " ", "direction": "lent", "amount": 5, "date": TODAY}).status_code == 422
-    late = (date.today() - timedelta(days=1)).isoformat()
+    late = (clock_today() - timedelta(days=1)).isoformat()
     assert client.post("/api/loans", headers=auth, json={"person": "X", "direction": "lent", "amount": 5, "date": TODAY, "due_date": late}).status_code == 422
 
 
@@ -147,11 +148,11 @@ def test_deleting_account_with_loans_works_with_foreign_keys(client, auth, bank)
 
 
 def test_loan_due_alerts(client, auth, bank):
-    soon = (date.today() + timedelta(days=2)).isoformat()
-    late = (date.today() - timedelta(days=5)).isoformat()
+    soon = (clock_today() + timedelta(days=2)).isoformat()
+    late = (clock_today() - timedelta(days=5)).isoformat()
     new_loan(client, auth, person="Ana", due_date=soon)
     old = client.post("/api/loans", headers=auth, json={"person": "Beto", "direction": "borrowed", "amount": 70_000,
-                                                          "date": (date.today() - timedelta(days=30)).isoformat(), "due_date": late}).json()
+                                                          "date": (clock_today() - timedelta(days=30)).isoformat(), "due_date": late}).json()
     r = client.post("/api/notifications/refresh", headers=auth).json()
     titles = " | ".join(i["title"] for i in r["items"])
     assert r["new"] == 2 and "Beto" in titles and "Ana" in titles

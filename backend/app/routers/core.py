@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..db import get_db
 from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
@@ -294,7 +295,7 @@ def create_transfer(data: TransferIn, db: Session = Depends(get_db), user: User 
 def trend(months: int = Query(6, ge=1, le=24),
           db: Session = Depends(get_db), user: User = Depends(current_user)):
     """Ingresos y gastos de los últimos N meses (incluye meses vacíos)."""
-    today = date.today()
+    today = clock.today()
     first = today.year * 12 + today.month - 1 - (months - 1)
     buckets = {}
     for i in range(months):

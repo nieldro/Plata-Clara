@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..db import get_db
 from ..deps import current_user
 from ..models import Account, Category, Transaction, User
@@ -46,7 +47,7 @@ def export_transactions(format: str = Query("xlsx", pattern="^(csv|xlsx)$"),
     rows = load_rows(db, user, f)
     body = exporter.to_csv(rows) if format == "csv" else exporter.to_xlsx(rows)
     return Response(body, media_type=MEDIA[format], headers={
-        "Content-Disposition": f'attachment; filename="plata-clara-movimientos-{date.today().isoformat()}.{format}"',
+        "Content-Disposition": f'attachment; filename="plata-clara-movimientos-{clock.today().isoformat()}.{format}"',
         "Cache-Control": "no-store",
         "X-Row-Count": str(len(rows)),
     })

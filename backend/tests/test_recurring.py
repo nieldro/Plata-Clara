@@ -1,4 +1,5 @@
 from datetime import date
+from app.clock import today as clock_today
 
 from app.services.recurring import add_months
 
@@ -10,7 +11,7 @@ def test_add_months_clamps_short_months():
 
 
 def test_run_catches_up_and_is_idempotent(client, auth, bank):
-    today = date.today()
+    today = clock_today()
     start = add_months(today.replace(day=1), -2, 1)  # hace 2 meses → 3 ocurrencias (incluye hoy si cae)
     r = client.post("/api/recurring", headers=auth, json={
         "account_id": bank["id"], "kind": "expense", "amount": 100_000,
@@ -29,7 +30,7 @@ def test_run_catches_up_and_is_idempotent(client, auth, bank):
 
 
 def test_paused_recurring_does_not_run(client, auth, bank):
-    start = add_months(date.today().replace(day=1), -1, 1)
+    start = add_months(clock_today().replace(day=1), -1, 1)
     rec = client.post("/api/recurring", headers=auth, json={
         "account_id": bank["id"], "kind": "income", "amount": 50_000,
         "frequency": "weekly", "start_date": start.isoformat(),
@@ -45,7 +46,7 @@ def test_recurring_on_credit_card_raises_debt(client, auth):
     }).json()
     client.post("/api/recurring", headers=auth, json={
         "account_id": card["id"], "kind": "expense", "amount": 40_000, "note": "Netflix",
-        "frequency": "monthly", "start_date": date.today().isoformat(),
+        "frequency": "monthly", "start_date": clock_today().isoformat(),
     })
     assert client.post("/api/recurring/run", headers=auth).json()["created"] == 1
     debts = client.get("/api/debts", headers=auth).json()
@@ -54,6 +55,6 @@ def test_recurring_on_credit_card_raises_debt(client, auth):
 
 def test_recurring_rejects_foreign_account(client, auth):
     r = client.post("/api/recurring", headers=auth, json={
-        "account_id": 999, "kind": "expense", "amount": 1, "start_date": date.today().isoformat(),
+        "account_id": 999, "kind": "expense", "amount": 1, "start_date": clock_today().isoformat(),
     })
     assert r.status_code == 404

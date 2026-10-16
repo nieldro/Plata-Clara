@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..models import Recurring, Transaction
 from .ledger import apply_to_card
 
@@ -31,7 +32,7 @@ def run_due(db: Session, user_id: int, today: date | None = None) -> list[tuple[
     Es idempotente: tras correr, `next_date` queda en el futuro y una segunda
     llamada no crea nada.
     """
-    today = today or date.today()
+    today = today or clock.today()
     created: list[tuple[Recurring, Transaction]] = []
     due = db.scalars(
         select(Recurring).where(Recurring.user_id == user_id, Recurring.active.is_(True), Recurring.next_date <= today)

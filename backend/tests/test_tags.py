@@ -1,11 +1,12 @@
 from datetime import date
+from app.clock import today as clock_today
 
 from app.services.tags import normalize
 
 
 def add(client, auth, account, amount, tags=None, kind="expense", note=""):
     body = {"account_id": account["id"], "kind": kind, "amount": amount, "note": note,
-            "date": date.today().isoformat()}
+            "date": clock_today().isoformat()}
     if tags is not None:
         body["tags"] = tags
     r = client.post("/api/transactions", headers=auth, json=body)
@@ -49,7 +50,7 @@ def test_update_tags_replace_keep_and_clear(client, auth, bank):
 
 
 def test_limits(client, auth, bank):
-    body = {"account_id": bank["id"], "kind": "expense", "amount": 1, "date": date.today().isoformat()}
+    body = {"account_id": bank["id"], "kind": "expense", "amount": 1, "date": clock_today().isoformat()}
     assert client.post("/api/transactions", headers=auth, json={**body, "tags": [f"t{i}" for i in range(11)]}).status_code == 422
     assert client.post("/api/transactions", headers=auth, json={**body, "tags": ["x" * 31]}).status_code == 422
 

@@ -1,4 +1,5 @@
 from datetime import date
+from app.clock import today as clock_today
 
 from conftest import category_id
 
@@ -79,7 +80,7 @@ def test_preview_suggests_categories_learned_before(client, auth, bank):
     mercado = category_id(client, auth, "Mercado")
     client.post("/api/transactions", headers=auth, json={
         "account_id": bank["id"], "kind": "expense", "amount": 9_000, "note": "Éxito Calle 80",
-        "category_id": mercado, "date": date.today().isoformat()})
+        "category_id": mercado, "date": clock_today().isoformat()})
     rows = preview(client, auth, bank).json()["rows"]
     exito = next(r for r in rows if "EXITO" in r["description"])
     assert exito["category_id"] == mercado

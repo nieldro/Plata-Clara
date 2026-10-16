@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from app.clock import today as clock_today
 
 from conftest import category_id
 
@@ -10,7 +11,7 @@ def refresh(client, auth):
 def spend(client, auth, account, category, amount):
     client.post("/api/transactions", headers=auth, json={
         "account_id": account["id"], "category_id": category, "kind": "expense",
-        "amount": amount, "date": date.today().isoformat(),
+        "amount": amount, "date": clock_today().isoformat(),
     })
 
 
@@ -33,7 +34,7 @@ def test_budget_alerts_80_then_100_without_repeating(client, auth, bank):
 
 
 def test_card_due_date_alert(client, auth):
-    soon = date.today() + timedelta(days=2)
+    soon = clock_today() + timedelta(days=2)
     client.post("/api/accounts", headers=auth, json={
         "name": "Visa", "type": "credit_card", "institution": "davivienda",
         "initial_balance": 500_000, "credit_limit": 3_000_000, "due_day": soon.day,
@@ -44,11 +45,11 @@ def test_card_due_date_alert(client, auth):
 
 
 def test_no_due_alert_when_far_or_paid_off(client, auth):
-    far = date.today() + timedelta(days=15)
+    far = clock_today() + timedelta(days=15)
     client.post("/api/accounts", headers=auth, json={
         "name": "Lejos", "type": "credit_card", "institution": "bbva", "initial_balance": 500_000, "due_day": far.day,
     })
-    soon = date.today() + timedelta(days=1)
+    soon = clock_today() + timedelta(days=1)
     client.post("/api/accounts", headers=auth, json={
         "name": "Saldada", "type": "credit_card", "institution": "bbva", "initial_balance": 0, "due_day": soon.day,
     })
@@ -57,7 +58,7 @@ def test_no_due_alert_when_far_or_paid_off(client, auth):
 
 def test_goal_close_to_deadline(client, auth):
     client.post("/api/savings", headers=auth, json={
-        "name": "Viaje", "target_amount": 1_000_000, "target_date": (date.today() + timedelta(days=10)).isoformat(),
+        "name": "Viaje", "target_amount": 1_000_000, "target_date": (clock_today() + timedelta(days=10)).isoformat(),
     })
     r = refresh(client, auth)
     assert r["new"] == 1 and r["items"][0]["kind"] == "goal"
@@ -66,7 +67,7 @@ def test_goal_close_to_deadline(client, auth):
 def test_recurring_run_notifies_and_read_flow(client, auth, bank):
     client.post("/api/recurring", headers=auth, json={
         "account_id": bank["id"], "kind": "expense", "amount": 10_000, "note": "Spotify",
-        "start_date": date.today().isoformat(),
+        "start_date": clock_today().isoformat(),
     })
     client.post("/api/recurring/run", headers=auth)
     data = client.get("/api/notifications", headers=auth).json()

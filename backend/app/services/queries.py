@@ -5,11 +5,12 @@ from decimal import Decimal
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..models import Budget, Category, Transaction
 
 
 def current_month() -> str:
-    return date.today().strftime("%Y-%m")
+    return clock.today().strftime("%Y-%m")
 
 
 def month_bounds(month: str) -> tuple[date, date]:

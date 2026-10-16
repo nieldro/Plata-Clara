@@ -1,5 +1,6 @@
 import io
 from datetime import date, timedelta
+from app.clock import today as clock_today
 from decimal import Decimal
 
 from openpyxl import load_workbook
@@ -7,7 +8,7 @@ from openpyxl import load_workbook
 from app.services import exporter
 from conftest import category_id
 
-TODAY = date.today()
+TODAY = clock_today()
 
 
 def add(client, auth, account, amount, note="", kind="expense", day=None, category=None, tags=None):

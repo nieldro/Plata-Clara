@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from app.clock import today as clock_today
 
 from app.services.queries import prev_month
 from conftest import category_id
@@ -7,7 +8,7 @@ from conftest import category_id
 def tx(client, auth, account, kind, amount, day=None, category=None):
     r = client.post("/api/transactions", headers=auth, json={
         "account_id": account["id"], "category_id": category, "kind": kind, "amount": amount,
-        "date": (day or date.today()).isoformat(),
+        "date": (day or clock_today()).isoformat(),
     })
     assert r.status_code == 201
 
@@ -32,7 +33,7 @@ def test_savings_rate_good_and_negative(client, auth, bank):
 
 def test_category_spike_vs_last_month(client, auth, bank):
     mercado = category_id(client, auth, "Mercado")
-    last = date.fromisoformat(prev_month(date.today().strftime("%Y-%m")) + "-10")
+    last = date.fromisoformat(prev_month(clock_today().strftime("%Y-%m")) + "-10")
     tx(client, auth, bank, "expense", 100_000, last, mercado)
     tx(client, auth, bank, "expense", 300_000, None, mercado)
     spikes = [i for k, i in ask(client, auth).items() if k.startswith("spike-")]
@@ -77,7 +78,7 @@ def test_highest_rate_debt_is_prioritised(client, auth, bank):
 def test_emergency_fund_coverage(client, auth):
     acc = client.post("/api/accounts", headers=auth, json={
         "name": "Ahorros", "type": "savings", "institution": "bancolombia", "initial_balance": 3_000_000}).json()
-    month = date.today().strftime("%Y-%m")
+    month = clock_today().strftime("%Y-%m")
     for _ in range(3):
         month = prev_month(month)
         tx(client, auth, acc, "expense", 500_000, date.fromisoformat(month + "-10"))
@@ -88,7 +89,7 @@ def test_emergency_fund_coverage(client, auth):
 def test_goal_too_ambitious_warns(client, auth, bank):
     tx(client, auth, bank, "income", 100_000)
     client.post("/api/savings", headers=auth, json={
-        "name": "Carro", "target_amount": 50_000_000, "target_date": (date.today() + timedelta(days=365)).isoformat(),
+        "name": "Carro", "target_amount": 50_000_000, "target_date": (clock_today() + timedelta(days=365)).isoformat(),
     })
     goal = next(i for k, i in ask(client, auth).items() if k.startswith("goal-"))
     assert goal["level"] == "warn"

@@ -14,6 +14,7 @@ from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Space
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..models import Account, Category, Debt, Loan, Transaction, User
 from .loans import paid_amounts
 from .notifications import cop
@@ -108,7 +109,7 @@ def build_report(db: Session, user: User, month: str) -> bytes:
     story = []
 
     story += [_p("Plata Clara", s["small"]), _p(f"Informe de {month_label(month)}", s["title"]),
-              _p(f"{user.name} · generado el {date.today().strftime('%d/%m/%Y')}", s["small"]), Spacer(1, 10)]
+              _p(f"{user.name} · generado el {clock.today().strftime('%d/%m/%Y')}", s["small"]), Spacer(1, 10)]
 
     # ---- resumen
     saving = f"{net / income * 100:.0f}%" if income > 0 else "—"

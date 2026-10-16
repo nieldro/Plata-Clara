@@ -9,6 +9,7 @@ from decimal import ROUND_DOWN, Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..models import Loan, LoanPayment, Transaction
 from .ledger import apply_to_card
 
@@ -24,7 +25,7 @@ def paid_amounts(db: Session, loan_ids: list[int]) -> dict[int, Decimal]:
 
 
 def loan_out(loan: Loan, paid: Decimal, today: date | None = None) -> dict:
-    today = today or date.today()
+    today = today or clock.today()
     outstanding = loan.amount - paid
     return {
         "id": loan.id, "person": loan.person, "direction": loan.direction, "amount": loan.amount,

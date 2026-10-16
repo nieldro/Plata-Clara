@@ -7,6 +7,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..models import Account, Category, Debt, SavingsGoal, Transaction
 from . import finance
 from .notifications import cop
@@ -157,7 +158,7 @@ def _goal_advice(goals: list[SavingsGoal], avg_net: float, today: date) -> list[
 
 
 def insights(db: Session, user_id: int, today: date | None = None) -> list[dict]:
-    today = today or date.today()
+    today = today or clock.today()
     month = today.strftime("%Y-%m") if today else current_month()
 
     has_data = db.scalar(select(Transaction.id).where(Transaction.user_id == user_id).limit(1))

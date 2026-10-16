@@ -1,6 +1,7 @@
 import json
 import time
 from datetime import date, datetime, timedelta, timezone
+from app.clock import today as clock_today
 from pathlib import Path
 
 import jwt
@@ -9,7 +10,7 @@ from sqlalchemy import func, select
 from app.config import settings
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
-TODAY = date.today().isoformat()
+TODAY = clock_today().isoformat()
 
 
 def hdr(token):
@@ -60,7 +61,7 @@ def seed(client, auth, bank):
     client.post("/api/transactions", headers=auth, json={"account_id": bank["id"], "kind": "expense", "amount": "1234.56",
                                                          "date": TODAY, "note": "Almuerzo", "tags": ["trabajo"]})
     client.post("/api/savings", headers=auth, json={"name": "Viaje", "target_amount": 500000, "current_amount": 1000,
-                                                    "target_date": (date.today() + timedelta(days=90)).isoformat()})
+                                                    "target_date": (clock_today() + timedelta(days=90)).isoformat()})
     client.post("/api/loans", headers=auth, json={"person": "Ana", "direction": "lent", "amount": 5000, "date": TODAY})
     client.post("/api/debts", headers=auth, json={"name": "Moto", "kind": "loan", "original_amount": 100, "current_balance": 100,
                                                   "rate": 10, "term_months": 12})

@@ -1,9 +1,10 @@
 from datetime import date, timedelta
+from app.clock import today as clock_today
 
 
 def goal(client, auth, **extra):
     body = {"name": "Viaje", "target_amount": 1_200_000,
-            "target_date": (date.today() + timedelta(days=365)).isoformat(), **extra}
+            "target_date": (clock_today() + timedelta(days=365)).isoformat(), **extra}
     r = client.post("/api/savings", headers=auth, json=body)
     assert r.status_code == 201
     return r.json()

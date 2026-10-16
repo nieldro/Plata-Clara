@@ -1,4 +1,5 @@
 from datetime import date
+from app.clock import today as clock_today
 
 from conftest import category_id
 
@@ -6,7 +7,7 @@ from conftest import category_id
 def spend(client, auth, account, category, amount):
     return client.post("/api/transactions", headers=auth, json={
         "account_id": account["id"], "category_id": category, "kind": "expense",
-        "amount": amount, "date": date.today().isoformat(),
+        "amount": amount, "date": clock_today().isoformat(),
     })
 
 

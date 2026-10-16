@@ -6,6 +6,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..models import Debt, Loan, Notification, SavingsGoal, Transaction
 from .queries import budget_rows
 
@@ -111,7 +112,7 @@ def _loan_alerts(db: Session, user_id: int, today: date) -> int:
 
 def generate(db: Session, user_id: int, today: date | None = None) -> int:
     """Crea los avisos que correspondan hoy. Devuelve cuántos avisos nuevos hubo."""
-    today = today or date.today()
+    today = today or clock.today()
     n = (_budget_alerts(db, user_id, today) + _due_alerts(db, user_id, today) + _goal_alerts(db, user_id, today)
          + _loan_alerts(db, user_id, today))
     db.commit()

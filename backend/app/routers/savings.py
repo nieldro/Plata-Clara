@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..db import get_db
 from ..deps import current_user, owned
 from ..models import SavingsContribution, SavingsGoal, User
@@ -24,7 +25,7 @@ def create_goal(data: GoalIn, db: Session = Depends(get_db), user: User = Depend
     db.add(goal)
     db.flush()
     if data.current_amount > 0:  # lo que ya tenías queda como primer aporte
-        db.add(SavingsContribution(goal_id=goal.id, amount=data.current_amount, date=date.today(), note="Saldo inicial"))
+        db.add(SavingsContribution(goal_id=goal.id, amount=data.current_amount, date=clock.today(), note="Saldo inicial"))
     db.commit()
     db.refresh(goal)
     return goal
@@ -56,7 +57,7 @@ def contribute(goal_id: int, data: ContributionIn,
     if goal.current_amount + signed < 0:
         raise HTTPException(422, "No puedes retirar más de lo que has ahorrado en esta meta")
     goal.current_amount += signed
-    db.add(SavingsContribution(goal_id=goal.id, amount=signed, date=data.date or date.today(), note=data.note))
+    db.add(SavingsContribution(goal_id=goal.id, amount=signed, date=data.date or clock.today(), note=data.note))
     db.commit()
     db.refresh(goal)
     return goal
@@ -90,7 +91,7 @@ def delete_contribution(goal_id: int, contribution_id: int,
 def plan(goal_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     """Cuánto ahorrar cada mes para llegar a la meta, y cómo crecería mes a mes."""
     goal = owned(db, SavingsGoal, goal_id, user)
-    today = date.today()
+    today = clock.today()
     n = finance.months_between(today, goal.target_date)
     r = finance.monthly_rate(float(goal.annual_rate), "EA")
     target, current = float(goal.target_amount), float(goal.current_amount)

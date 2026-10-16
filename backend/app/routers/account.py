@@ -3,6 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
+from .. import clock
 from ..db import get_db
 from ..deps import current_user
 from ..models import User
@@ -45,7 +46,7 @@ def export(db: Session = Depends(get_db), user: User = Depends(current_user)):
     """Descarga todos tus datos en un archivo JSON."""
     body = svc.export_data(db, user)
     return Response(body, media_type="application/json", headers={
-        "Content-Disposition": f'attachment; filename="plata-clara-datos-{date.today().isoformat()}.json"',
+        "Content-Disposition": f'attachment; filename="plata-clara-datos-{clock.today().isoformat()}.json"',
         "Cache-Control": "no-store",
     })
 

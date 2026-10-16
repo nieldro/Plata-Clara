@@ -1,4 +1,5 @@
 from datetime import date
+from app.clock import today as clock_today
 
 from app.services.rules import fold, tokens
 from conftest import category_id
@@ -7,7 +8,7 @@ from conftest import category_id
 def add(client, auth, account, note, category=None, kind="expense", amount=1000):
     r = client.post("/api/transactions", headers=auth, json={
         "account_id": account["id"], "category_id": category, "kind": kind, "amount": amount,
-        "note": note, "date": date.today().isoformat()})
+        "note": note, "date": clock_today().isoformat()})
     assert r.status_code == 201
     return r.json()
 

@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+from .. import clock
 from .rules import fold
 
 MAX_ROWS = 2000
@@ -200,7 +201,7 @@ def parse_date(raw, order: str = "dmy") -> date | None:
             d = datetime.strptime(s, fmt).date()
         except ValueError:
             continue
-        if 1990 <= d.year <= date.today().year + 1:
+        if 1990 <= d.year <= clock.today().year + 1:
             return d
     return None
 

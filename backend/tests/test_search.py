@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from app.clock import today as clock_today
 
 from conftest import category_id
 
@@ -6,7 +7,7 @@ from conftest import category_id
 def add(client, auth, account, amount, note="", kind="expense", day=None, category=None):
     r = client.post("/api/transactions", headers=auth, json={
         "account_id": account["id"], "category_id": category, "kind": kind, "amount": amount,
-        "note": note, "date": (day or date.today()).isoformat()})
+        "note": note, "date": (day or clock_today()).isoformat()})
     assert r.status_code == 201
 
 
@@ -24,7 +25,7 @@ def seed(client, auth, bank):
     mercado = category_id(client, auth, "Mercado")
     add(client, auth, bank, 50_000, "Éxito mercado", category=mercado)
     add(client, auth, bank, 12_000, "Taxi al aeropuerto")
-    add(client, auth, bank, 3_000_000, "Nómina", kind="income", day=date.today() - timedelta(days=40))
+    add(client, auth, bank, 3_000_000, "Nómina", kind="income", day=clock_today() - timedelta(days=40))
     return mercado
 
 
@@ -49,10 +50,10 @@ def test_amount_range(client, auth, bank):
 
 def test_date_range_and_kind(client, auth, bank):
     seed(client, auth, bank)
-    recent = (date.today() - timedelta(days=7)).isoformat()
+    recent = (clock_today() - timedelta(days=7)).isoformat()
     assert len(search(client, auth, date_from=recent).json()) == 2
     assert notes(search(client, auth, kind="income")) == ["Nómina"]
-    assert search(client, auth, date_to=(date.today() - timedelta(days=30)).isoformat()).json()[0]["note"] == "Nómina"
+    assert search(client, auth, date_to=(clock_today() - timedelta(days=30)).isoformat()).json()[0]["note"] == "Nómina"
 
 
 def test_category_and_uncategorized_filters(client, auth, bank):
@@ -73,7 +74,7 @@ def test_hide_transfers(client, auth, bank):
     other = client.post("/api/accounts", headers=auth, json={
         "name": "Nequi", "type": "wallet", "institution": "nequi", "initial_balance": 0}).json()
     client.post("/api/transfers", headers=auth, json={
-        "from_account_id": bank["id"], "to_account_id": other["id"], "amount": 5, "date": date.today().isoformat()})
+        "from_account_id": bank["id"], "to_account_id": other["id"], "amount": 5, "date": clock_today().isoformat()})
     add(client, auth, bank, 100, "normal")
     assert len(search(client, auth).json()) == 3
     assert notes(search(client, auth, hide_transfers=True)) == ["normal"]

@@ -1,4 +1,5 @@
 from datetime import date
+from app.clock import today as clock_today
 
 from conftest import category_id
 
@@ -6,7 +7,7 @@ from conftest import category_id
 def add(client, auth, account, kind="expense", amount=10_000, **extra):
     r = client.post("/api/transactions", headers=auth, json={
         "account_id": account["id"], "kind": kind, "amount": amount,
-        "date": date.today().isoformat(), **extra})
+        "date": clock_today().isoformat(), **extra})
     assert r.status_code == 201
     return r.json()
 
@@ -57,7 +58,7 @@ def test_cannot_edit_transfer_or_foreign_transaction(client, auth, bank):
     other = client.post("/api/accounts", headers=auth, json={
         "name": "Nequi", "type": "wallet", "institution": "nequi", "initial_balance": 0}).json()
     client.post("/api/transfers", headers=auth, json={
-        "from_account_id": bank["id"], "to_account_id": other["id"], "amount": 5, "date": date.today().isoformat()})
+        "from_account_id": bank["id"], "to_account_id": other["id"], "amount": 5, "date": clock_today().isoformat()})
     leg = client.get("/api/transactions", headers=auth).json()[0]
     assert client.patch(f"/api/transactions/{leg['id']}", headers=auth, json={"amount": 9}).status_code == 422
 
