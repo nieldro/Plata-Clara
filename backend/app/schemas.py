@@ -89,7 +89,7 @@ class AccountOut(ORM):
 
 
 class CategoryIn(BaseModel):
-    name: str
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     kind: Literal["income", "expense"]
 
 

@@ -108,6 +108,11 @@ def list_categories(db: Session = Depends(get_db), user: User = Depends(current_
 
 @router.post("/categories", response_model=CategoryOut, status_code=201)
 def create_category(data: CategoryIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    exists = db.scalar(select(Category.id).where(
+        Category.user_id == user.id, Category.kind == data.kind, func.lower(Category.name) == data.name.lower()))
+    if exists:
+        kind = "de ingreso" if data.kind == "income" else "de gasto"
+        raise HTTPException(409, f"Ya tienes una categoría «{data.name}» {kind}")
     cat = Category(user_id=user.id, **data.model_dump())
     db.add(cat)
     db.commit()
