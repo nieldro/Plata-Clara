@@ -15,7 +15,7 @@ from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
 from ..models import (Account, Attachment, Budget, Category, CategoryRule, Debt, DebtPayment, LoanPayment,
                       Recurring, Tag, Transaction, User, transaction_tags)
-from ..schemas import (AccountIn, AccountOut, CategoryIn, CategoryOut,
+from ..schemas import (AccountIn, AccountOut, AccountUpdate, CategoryIn, CategoryOut,
                        TransactionIn, TransactionOut, TransactionUpdate, TransferIn)
 from ..services.ledger import apply_to_card
 from ..services.queries import account_balances
@@ -77,6 +77,41 @@ def create_account(data: AccountIn, db: Session = Depends(get_db), user: User = 
     db.commit()
     db.refresh(acc)
     return _account_out(acc, {}, debt)
+
+
+CARD_FIELDS = {"credit_limit", "rate", "rate_type", "monthly_payment", "due_day"}
+
+
+@router.patch("/accounts/{account_id}", response_model=AccountOut)
+def update_account(account_id: int, data: AccountUpdate, db: Session = Depends(get_db),
+                   user: User = Depends(current_user)):
+    """Edita el nombre, el saldo inicial o (en tarjetas) el cupo, la tasa, el pago habitual y el día de pago."""
+    acc = owned(db, Account, account_id, user)
+    changes = data.model_dump(exclude_unset=True)
+    is_card = acc.type == "credit_card"
+    if not is_card and CARD_FIELDS & changes.keys():
+        raise HTTPException(422, "El cupo, la tasa y el pago solo se pueden editar en tarjetas de crédito")
+    if is_card and "initial_balance" in changes:
+        raise HTTPException(422, "El saldo de una tarjeta es su deuda: se mueve con gastos y abonos")
+
+    if "name" in changes:
+        acc.name = changes["name"]
+    if "initial_balance" in changes:
+        acc.initial_balance = changes["initial_balance"]
+    debt = db.get(Debt, acc.debt_id) if acc.debt_id else None
+    if is_card:
+        if "credit_limit" in changes:
+            acc.credit_limit = changes["credit_limit"]
+        if debt:
+            for field in ("rate", "rate_type", "monthly_payment", "due_day"):
+                if field in changes:
+                    setattr(debt, field, changes[field])
+            if "name" in changes:  # la deuda se llama «Entidad · nombre de la tarjeta»
+                entity = next((i["name"] for i in INSTITUTIONS if i["slug"] == acc.institution), acc.institution_name or "")
+                debt.name = f"{entity} · {acc.name}"
+    db.commit()
+    db.refresh(acc)
+    return _account_out(acc, account_balances(db, user.id), debt)
 
 
 @router.delete("/accounts/{account_id}", status_code=204)

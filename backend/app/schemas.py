@@ -74,6 +74,24 @@ class AccountIn(BaseModel):
         return self
 
 
+class AccountUpdate(BaseModel):
+    """Cambios parciales a una cuenta. Los campos de tarjeta solo valen para tarjetas de crédito."""
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)] | None = None
+    initial_balance: Decimal | None = None          # corrige el saldo con el que abriste la cuenta (no aplica a tarjetas)
+    credit_limit: Decimal | None = Field(default=None, gt=0)
+    rate: Decimal | None = Field(default=None, ge=0)
+    rate_type: RateType | None = None
+    monthly_payment: Decimal | None = Field(default=None, gt=0)  # null = quitar el pago habitual
+    due_day: int | None = Field(default=None, ge=1, le=31)       # null = quitar el día de pago
+
+    @model_validator(mode="after")
+    def _not_null_where_required(self):
+        for field in ("name", "initial_balance", "credit_limit", "rate", "rate_type"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"«{field}» no puede quedar vacío")
+        return self
+
+
 class AccountOut(ORM):
     id: int
     name: str
