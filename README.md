@@ -1,5 +1,8 @@
 # Plata Clara · Finanzas personales
 
+[![CI](https://github.com/nieldro/Plata-Clara/actions/workflows/ci.yml/badge.svg)](https://github.com/nieldro/Plata-Clara/actions/workflows/ci.yml)
+[![Escaneo de secretos](https://github.com/nieldro/Plata-Clara/actions/workflows/secrets.yml/badge.svg)](https://github.com/nieldro/Plata-Clara/actions/workflows/secrets.yml)
+
 App web para registrar movimientos, manejar cuentas, tarjetas de crédito y créditos
 (con cálculo de intereses y proyección de pago) y planear metas de ahorro.
 
@@ -79,6 +82,8 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Importar extracto, Quién m
 - Los logos salen del favicon de cada entidad (servicio gratuito de Google); si no carga, se muestra un monograma.
 - Si la entidad no está en la lista, se elige «Otra entidad o app» y se escribe el nombre.
 - Tipos de cuenta: ahorros, corriente, billetera digital, inversión, tarjeta de crédito y efectivo.
+- **Editar cuentas:** nombre y saldo inicial; en tarjetas también cupo, tasa, pago habitual y día de pago (lápiz ✎ en
+  cada cuenta). Una categoría o cuenta con el mismo nombre se rechaza para no duplicar.
 - **Tarjeta de crédito:** al crearla se crea su deuda (tasa, cupo, pago mensual). Un gasto en la tarjeta sube la
   deuda, un ingreso/abono la baja, y la proyección con intereses sale en «Deudas y tarjetas».
 
@@ -131,7 +136,11 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Importar extracto, Quién m
 ## Seguridad
 - **Límite de intentos:** 5 fallos de inicio de sesión por IP y correo (30 por IP) en 15 minutos bloquean con un 429; un
   correo inexistente se bloquea igual que uno real, y la contraseña correcta tampoco entra mientras dura el bloqueo.
-  Máx. 10 registros por hora y por IP. El limitador vive en memoria: sirve para una sola instancia de la API.
+  Máx. 10 registros por hora y por IP. Exportar, generar informes PDF y leer extractos se limita a 20 por minuto y por
+  usuario. Los limitadores viven en memoria: sirven para una sola instancia de la API.
+- **Cabeceras:** la API responde con `X-Content-Type-Options`, `X-Frame-Options` y `Referrer-Policy`, y marca sus datos
+  privados como `Cache-Control: no-store`.
+- **Salud:** `/health` (¿está vivo?) y `/health/ready` (¿responde la base de datos?, 503 si no); Docker usa el segundo.
 - **Sin credenciales en el repositorio:** `.env` está en `.gitignore`; solo se sube `.env.example` con valores de ejemplo.
   Un escaneo con gitleaks (`.github/workflows/secrets.yml`) revisa toda la historia en cada push.
 - Con `ENVIRONMENT=production` la API **no arranca** si `SECRET_KEY` es la de desarrollo o tiene menos de 32 caracteres.
@@ -144,11 +153,15 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Importar extracto, Quién m
 
 ## Pruebas y CI
 ```powershell
-cd backend; .\.venv\Scripts\python.exe -m pytest -q     # 184 pruebas
+cd backend;  .\.venv\Scripts\python.exe -m pytest -q       # 217 pruebas del backend
+cd backend;  .\.venv\Scripts\ruff.exe check .              # análisis de código (lint)
+cd frontend; npm test                                      # 15 pruebas del frontend (vitest)
 ```
-Las pruebas corren sobre SQLite en memoria **con llaves foráneas activadas** (como PostgreSQL), una carpeta de archivos
-nueva en cada prueba, y verifican que las migraciones coincidan con los modelos. GitHub Actions corre en cada push:
-- `ci.yml`: pruebas del backend, build del frontend y **construcción de las imágenes de Docker** de producción.
+Las pruebas del backend corren sobre SQLite en memoria **con llaves foráneas activadas** (como PostgreSQL), una carpeta
+de archivos nueva en cada prueba, y verifican que las migraciones coincidan con los modelos. GitHub Actions corre en
+cada push:
+- `ci.yml`: lint y pruebas del backend, pruebas y build del frontend, y **construcción de las imágenes de Docker** de
+  producción con la API arrancando sobre PostgreSQL.
 - `secrets.yml`: escaneo de secretos (gitleaks) sobre toda la historia.
 
 > **Nota:** las pruebas usan SQLite; el despliegue usa PostgreSQL. Las consultas son estándar SQLAlchemy, pero conviene
