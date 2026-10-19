@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,24 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Finanzas Personales", version="0.1.0", lifespan=lifespan)
+
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",     # el navegador no «adivina» el tipo de un archivo
+    "X-Frame-Options": "DENY",               # nadie puede incrustar la API en un iframe
+    "Referrer-Policy": "no-referrer",
+}
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for name, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    if request.url.path.startswith("/api"):
+        # Datos financieros privados: que ni el navegador ni un proxy los guarden. Un endpoint que
+        # necesite otra política (como la descarga de recibos) ya la trae puesta y se respeta.
+        response.headers.setdefault("Cache-Control", "no-store")
+    return response
 
 api = APIRouter(prefix="/api")
 for r in (
