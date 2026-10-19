@@ -1,8 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from . import models  # noqa: F401  (registra las tablas)
+from .db import get_db
 from .migrate import run_migrations
 from .routers import (account, assistant, attachments, auth, budgets, core, debts, exports, imports, loans,
                       notifications, recurring, reports, rules, savings, simulator, tags)
@@ -28,4 +31,15 @@ app.include_router(api)
 
 @app.get("/health")
 def health():
+    """¿El proceso está vivo? (no mira la base de datos)"""
     return {"status": "ok"}
+
+
+@app.get("/health/ready")
+def ready(db: Session = Depends(get_db)):
+    """¿Puede atender peticiones? Comprueba que la base de datos responde; si no, 503."""
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception as e:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, {"status": "error", "database": "down"}) from e
+    return {"status": "ok", "database": "ok"}
