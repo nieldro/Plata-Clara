@@ -64,6 +64,28 @@ def test_goal_close_to_deadline(client, auth):
     assert r["new"] == 1 and r["items"][0]["kind"] == "goal"
 
 
+def test_goal_reached_is_celebrated_once(client, auth):
+    far = (clock_today() + timedelta(days=200)).isoformat()
+    g = client.post("/api/savings", headers=auth, json={"name": "Viaje", "target_amount": 1_000_000, "target_date": far}).json()
+    assert refresh(client, auth)["new"] == 0                      # aún lejos y sin lograr: nada que avisar
+
+    client.post(f"/api/savings/{g['id']}/contributions", headers=auth, json={"amount": 1_000_000})
+    r = refresh(client, auth)
+    assert r["new"] == 1 and "Lograste" in r["items"][0]["title"] and "Viaje" in r["items"][0]["title"]
+    assert refresh(client, auth)["new"] == 0                      # no se repite
+
+    client.post(f"/api/savings/{g['id']}/contributions", headers=auth, json={"amount": 5_000})  # pasarse tampoco repite
+    assert refresh(client, auth)["new"] == 0
+
+
+def test_goal_with_withdrawal_below_target_is_not_celebrated(client, auth):
+    far = (clock_today() + timedelta(days=200)).isoformat()
+    g = client.post("/api/savings", headers=auth, json={"name": "Auto", "target_amount": 500_000, "target_date": far,
+                                                         "current_amount": 400_000}).json()
+    client.post(f"/api/savings/{g['id']}/contributions", headers=auth, json={"amount": 50_000, "kind": "withdraw"})
+    assert refresh(client, auth)["new"] == 0
+
+
 def test_recurring_run_notifies_and_read_flow(client, auth, bank):
     client.post("/api/recurring", headers=auth, json={
         "account_id": bank["id"], "kind": "expense", "amount": 10_000, "note": "Spotify",

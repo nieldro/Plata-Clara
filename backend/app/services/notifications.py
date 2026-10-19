@@ -73,6 +73,8 @@ def _goal_alerts(db: Session, user_id: int, today: date) -> int:
     n = 0
     for g in db.scalars(select(SavingsGoal).where(SavingsGoal.user_id == user_id)):
         if g.current_amount >= g.target_amount:
+            n += _add(db, user_id, f"goal:{g.id}:done", "goal", f"¡Lograste tu meta «{g.name}»!",
+                      f"Ahorraste {cop(g.current_amount)}, que cubre tu objetivo de {cop(g.target_amount)}. 🎉")
             continue
         days = (g.target_date - today).days
         missing = cop(g.target_amount - g.current_amount)
