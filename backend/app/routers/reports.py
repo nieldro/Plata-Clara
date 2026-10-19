@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import current_user
+from ..deps import current_user, limit_heavy
 from ..models import User
 from ..services.queries import current_month
 from ..services.report import build_report
 
-router = APIRouter(prefix="/reports", tags=["informes"])
+router = APIRouter(prefix="/reports", tags=["informes"], dependencies=[Depends(limit_heavy)])
 
 
 @router.get("/monthly")

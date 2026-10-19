@@ -58,12 +58,13 @@ def _build():
         SlidingWindowLimiter(settings.login_max_failures, window),         # fallos por IP + correo
         SlidingWindowLimiter(settings.login_ip_max_failures, window),      # fallos por IP, cualquier correo
         SlidingWindowLimiter(settings.register_max_per_hour, 3600),        # registros por IP
+        SlidingWindowLimiter(settings.heavy_max_per_minute, 60),           # operaciones pesadas por usuario
     )
 
 
-login_limiter, login_ip_limiter, register_limiter = _build()
+login_limiter, login_ip_limiter, register_limiter, heavy_limiter = _build()
 
 
 def clear_all() -> None:
-    for limiter in (login_limiter, login_ip_limiter, register_limiter):
+    for limiter in (login_limiter, login_ip_limiter, register_limiter, heavy_limiter):
         limiter.clear()

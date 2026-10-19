@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from .db import get_db
 from .models import User
 from .security import decode_token_full
+from .services import ratelimit
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -20,6 +21,17 @@ def current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)) ->
     if changed and decoded[1] < int(changed.replace(tzinfo=timezone.utc).timestamp()):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Tu contraseña cambió: inicia sesión de nuevo")
     return user
+
+
+def limit_heavy(user: User = Depends(current_user)) -> None:
+    """Freno para operaciones costosas (exportar, informes, leer extractos): máx. N por minuto y usuario."""
+    key = f"heavy|{user.id}"
+    wait = ratelimit.heavy_limiter.retry_after(key)
+    if wait:
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
+                            f"Estás pidiendo demasiados archivos seguidos. Espera {wait} segundos e inténtalo de nuevo.",
+                            headers={"Retry-After": str(wait)})
+    ratelimit.heavy_limiter.record(key)
 
 
 def owned(db: Session, model, obj_id: int, user: User):

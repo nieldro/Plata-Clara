@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import current_user, owned
+from ..deps import current_user, limit_heavy, owned
 from ..models import Account, Category, Transaction, User
 from ..schemas import ImportCommitIn
 from ..services import importer
@@ -66,7 +66,7 @@ def _mapping_from_form(values: dict[str, int | None], detected: dict[str, int | 
     return detected
 
 
-@router.post("/preview")
+@router.post("/preview", dependencies=[Depends(limit_heavy)])
 async def preview(
     file: UploadFile = File(...),
     account_id: int = Form(...),

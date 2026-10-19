@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 
 from .. import clock
 from ..db import get_db
-from ..deps import current_user
+from ..deps import current_user, limit_heavy
 from ..models import Account, Category, Transaction, User
 from ..services import exporter
 from .core import TxFilters, tx_filters
 
-router = APIRouter(prefix="/export", tags=["exportar"])
+router = APIRouter(prefix="/export", tags=["exportar"], dependencies=[Depends(limit_heavy)])
 
 MEDIA = {
     "csv": "text/csv; charset=utf-8",

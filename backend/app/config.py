@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     login_ip_max_failures: int = 30      # fallos permitidos por IP (cualquier correo)
     login_window_seconds: int = 15 * 60
     register_max_per_hour: int = 10
+    heavy_max_per_minute: int = 20       # exportar, informes PDF y leer extractos, por usuario
 
     @model_validator(mode="after")
     def _valid_timezone(self):
