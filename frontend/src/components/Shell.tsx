@@ -42,6 +42,13 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
   const current = TABS.find((t) => t.key === tab)!;
   const Page = current.page;
 
+  // El título de la pestaña del navegador dice en qué sección estás; al salir se restaura el original.
+  useEffect(() => {
+    const original = document.title;
+    document.title = `${current.label} · Plata Clara`;
+    return () => { document.title = original; };
+  }, [current.label]);
+
   return (
     <div className="shell">
       <aside className="side">
