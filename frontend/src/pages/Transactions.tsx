@@ -149,8 +149,8 @@ export default function Transactions() {
                   <b>{a.name}</b>
                   <small>{entityName(a)} · {ACCOUNT_TYPES[a.type]}</small>
                 </div>
-                <button className="link" title="Editar cuenta" onClick={(e) => { e.stopPropagation(); setEditingAccount(a); }}>✎</button>
-                <button className="link" title="Eliminar cuenta" onClick={(e) => { e.stopPropagation(); removeAccount(a); }}>✕</button>
+                <button className="link" title="Editar cuenta" aria-label={`Editar la cuenta ${a.name}`} onClick={(e) => { e.stopPropagation(); setEditingAccount(a); }}>✎</button>
+                <button className="link" title="Eliminar cuenta" aria-label={`Eliminar la cuenta ${a.name}`} onClick={(e) => { e.stopPropagation(); removeAccount(a); }}>✕</button>
               </div>
               <div className={`acc-bal ${Number(a.balance) < 0 ? "neg" : ""}`}>{money(a.balance)}</div>
               {isCard && (
@@ -228,7 +228,7 @@ export default function Transactions() {
           {cats.map((c) => (
             <span key={c.id} className={`chip ${c.kind}`}>
               {c.name}
-              <button className="link" title="Borrar" onClick={() => removeCategory(c)}>✕</button>
+              <button className="link" title="Borrar" aria-label={`Borrar la categoría ${c.name}`} onClick={() => removeCategory(c)}>✕</button>
             </span>
           ))}
         </div>
@@ -254,7 +254,7 @@ export default function Transactions() {
                   <td className="num neg">−{money(t.expense)}</td>
                   <td className="num pos">{Number(t.income) > 0 ? `+${money(t.income)}` : ""}</td>
                   <td className="actions">
-                    <button className="link" title="Quitar la etiqueta de todos los movimientos"
+                    <button className="link" title="Quitar la etiqueta de todos los movimientos" aria-label={`Quitar la etiqueta ${t.name}`}
                       onClick={() => confirm(`¿Quitar la etiqueta #${t.name}? Los movimientos se conservan.`) && api.del(`/tags/${t.id}`).then(load)}>✕</button>
                   </td>
                 </tr>

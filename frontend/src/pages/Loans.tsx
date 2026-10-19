@@ -172,7 +172,7 @@ export default function Loans() {
             <div className="row" key={i} style={{ marginTop: 6 }}>
               <input placeholder={`Persona ${i + 1}`} value={r.person} onChange={(e) => setRow(i, { person: e.target.value })} maxLength={100} />
               {custom && <input type="number" min="0.01" step="0.01" placeholder="Su parte" value={r.amount} onChange={(e) => setRow(i, { amount: e.target.value })} />}
-              {rows.length > 1 && <button type="button" className="link" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>}
+              {rows.length > 1 && <button type="button" className="link" aria-label="Quitar persona" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>}
             </div>
           ))}
           <div className="row">
@@ -236,7 +236,7 @@ export default function Loans() {
                       <tr key={p.id}>
                         <td>{p.date}</td><td>{p.note || "Abono"}{p.in_account && " · en cuenta"}</td>
                         <td className="num">{money(p.amount)}</td>
-                        <td className="actions"><button className="link" onClick={() => removePayment(detail, p)}>✕</button></td>
+                        <td className="actions"><button className="link" aria-label="Borrar abono" onClick={() => removePayment(detail, p)}>✕</button></td>
                       </tr>
                     ))}
                   </tbody></table>

@@ -82,7 +82,7 @@ export default function RecurringSection() {
                 <td className={`num ${r.kind === "income" ? "pos" : "neg"}`}>{r.kind === "income" ? "+" : "−"}{money(r.amount)}</td>
                 <td>
                   <button className="link" onClick={() => api.post(`/recurring/${r.id}/toggle`).then(load)}>{r.active ? "Pausar" : "Activar"}</button>
-                  <button className="link" onClick={() => api.del(`/recurring/${r.id}`).then(load)}>✕</button>
+                  <button className="link" aria-label="Eliminar recurrente" onClick={() => api.del(`/recurring/${r.id}`).then(load)}>✕</button>
                 </td>
               </tr>
             ))}

@@ -53,7 +53,7 @@ export default function RulesSection({ cats }: { cats: Category[] }) {
                   <td>{r.keyword}</td>
                   <td>{r.category}</td>
                   <td>{r.manual ? "Manual" : `Aprendida · ${r.hits} ${r.hits === 1 ? "vez" : "veces"}`}</td>
-                  <td className="actions"><button className="link" onClick={() => api.del(`/rules/${r.id}`).then(load)}>✕</button></td>
+                  <td className="actions"><button className="link" aria-label={`Borrar la regla «${r.keyword}»`} onClick={() => api.del(`/rules/${r.id}`).then(load)}>✕</button></td>
                 </tr>
               ))}
             </tbody>

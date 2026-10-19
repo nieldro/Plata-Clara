@@ -173,14 +173,14 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
                   <td className={`num ${t.kind === "income" ? "pos" : "neg"}`}>{t.kind === "income" ? "+" : "−"}{money(t.amount)}</td>
                   <td className="actions">
                     {!t.transfer_id && (
-                      <button className={`link ${t.attachments ? "has-files" : ""}`} title="Recibos" onClick={() => onReceipts(t)}>
+                      <button className={`link ${t.attachments ? "has-files" : ""}`} title="Recibos" aria-label={`Recibos del movimiento (${t.attachments})`} onClick={() => onReceipts(t)}>
                         📎{t.attachments > 0 && <sup>{t.attachments}</sup>}
                       </button>
                     )}
-                    {!t.transfer_id && !t.loan_id && <button className="link" title="Editar" onClick={() => onEdit(t)}>✎</button>}
+                    {!t.transfer_id && !t.loan_id && <button className="link" title="Editar" aria-label="Editar movimiento" onClick={() => onEdit(t)}>✎</button>}
                     {t.loan_id
                       ? <small title="Se gestiona desde «Quién me debe»">en Préstamos</small>
-                      : <button className="link" title="Borrar" onClick={() => api.del(`/transactions/${t.id}`).then(onChanged)}>✕</button>}
+                      : <button className="link" title="Borrar" aria-label="Borrar movimiento" onClick={() => api.del(`/transactions/${t.id}`).then(onChanged)}>✕</button>}
                   </td>
                 </tr>
               );

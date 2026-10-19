@@ -88,7 +88,7 @@ export default function NotificationBell() {
                   <div key={n.id} className={`notif ${n.read ? "" : "unread"} k-${n.kind}`} onClick={() => markOne(n)}>
                     <div className="notif-top">
                       <small>{KIND_LABEL[n.kind] ?? n.kind} · {when(n.created_at)}</small>
-                      <button className="link" onClick={(e) => { e.stopPropagation(); remove(n); }}>✕</button>
+                      <button className="link" aria-label="Borrar aviso" onClick={(e) => { e.stopPropagation(); remove(n); }}>✕</button>
                     </div>
                     <b>{n.title}</b>
                     <p>{n.body}</p>
