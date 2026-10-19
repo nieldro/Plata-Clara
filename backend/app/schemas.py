@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, EmailStr, Field, StringConstraints, model_validator
 
 RateType = Literal["EA", "MV", "NA"]
 
@@ -13,10 +13,18 @@ class ORM(BaseModel):
 
 
 # --- auth ---
+def _clean_email(value):
+    return value.strip().lower() if isinstance(value, str) else value
+
+
+# Correo sin espacios alrededor y en minúsculas: «Ana@Correo.co » y «ana@correo.co» son la misma cuenta.
+NormalizedEmail = Annotated[EmailStr, BeforeValidator(_clean_email)]
+
+
 class RegisterIn(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(min_length=8)
-    name: str = Field(min_length=1, max_length=100)
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 
 
 class UserOut(ORM):
