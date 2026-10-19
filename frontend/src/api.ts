@@ -1,3 +1,5 @@
+import { messageFor, NETWORK_ERROR } from "./errors";
+
 const TOKEN_KEY = "token";
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
@@ -20,19 +22,19 @@ async function send(path: string, init: RequestInit = {}): Promise<Response> {
   if (token) headers.set("Authorization", `Bearer ${token}`);
   if (typeof init.body === "string") headers.set("Content-Type", "application/json");
 
-  const res = await fetch(`/api${path}`, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, { ...init, headers });
+  } catch {
+    throw new Error(NETWORK_ERROR); // servidor apagado, sin internet o bloqueado
+  }
   if (res.status === 401 && token) {
     setToken(null);
     location.reload();
   }
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const detail = err.detail;
-    if (Array.isArray(detail)) {
-      // errores de validación de FastAPI: [{msg: "Value error, ..."}]
-      throw new Error(detail.map((d) => String(d.msg ?? "").replace(/^Value error, /, "")).join(" · "));
-    }
-    throw new Error(typeof detail === "string" ? detail : "Error en la solicitud");
+    const body = await res.json().catch(() => null);
+    throw new Error(messageFor(res.status, body));
   }
   return res;
 }
