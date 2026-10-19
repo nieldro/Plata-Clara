@@ -2,6 +2,7 @@ import { AnimatePresence } from "framer-motion";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, localDate, money, splitTags, TagSummary, Tx } from "../api";
 import AccountModal from "../components/AccountModal";
+import EditAccountModal from "../components/EditAccountModal";
 import EditTransactionModal from "../components/EditTransactionModal";
 import ReceiptsModal from "../components/ReceiptsModal";
 import RulesSection from "../components/RulesSection";
@@ -16,6 +17,7 @@ export default function Transactions() {
   const [filter, setFilter] = useState<number | null>(null);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Tx | null>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [receiptsFor, setReceiptsFor] = useState<Tx | null>(null);
   const [error, setError] = useState("");
 
@@ -147,6 +149,7 @@ export default function Transactions() {
                   <b>{a.name}</b>
                   <small>{entityName(a)} · {ACCOUNT_TYPES[a.type]}</small>
                 </div>
+                <button className="link" title="Editar cuenta" onClick={(e) => { e.stopPropagation(); setEditingAccount(a); }}>✎</button>
                 <button className="link" title="Eliminar cuenta" onClick={(e) => { e.stopPropagation(); removeAccount(a); }}>✕</button>
               </div>
               <div className={`acc-bal ${Number(a.balance) < 0 ? "neg" : ""}`}>{money(a.balance)}</div>
@@ -267,6 +270,10 @@ export default function Transactions() {
       />
 
       <AnimatePresence>
+        {editingAccount && (
+          <EditAccountModal key="edit-account" account={editingAccount} onClose={() => setEditingAccount(null)}
+            onSaved={() => { setEditingAccount(null); load(); }} />
+        )}
         {receiptsFor && (
           <ReceiptsModal key="receipts" tx={receiptsFor} onClose={() => setReceiptsFor(null)}
             onChanged={() => setVersion((v) => v + 1)} />

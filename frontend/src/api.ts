@@ -116,7 +116,7 @@ export const splitTags = (v: FormDataEntryValue | null) => String(v ?? "").split
 export type Debt = {
   id: number; name: string; kind: "credit_card" | "loan"; original_amount: number;
   current_balance: number; rate: number; rate_type: "EA" | "MV" | "NA";
-  term_months: number | null; monthly_payment: number | null;
+  term_months: number | null; monthly_payment: number | null; due_day: number | null;
 };
 export type Row = { n: number; payment: number; interest: number; principal: number; balance: number };
 export type Plan = {
