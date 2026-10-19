@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import clock
-from ..models import Debt, Loan, Notification, SavingsGoal, Transaction
+from ..models import Debt, Loan, Notification, SavingsGoal
 from .queries import budget_rows
 
 DUE_WARNING_DAYS = 3

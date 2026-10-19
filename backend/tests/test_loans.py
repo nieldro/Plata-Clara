@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import timedelta
 from app.clock import today as clock_today
 from decimal import Decimal
 

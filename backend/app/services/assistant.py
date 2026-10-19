@@ -131,9 +131,11 @@ def _emergency_fund(cash: float, avg_expense: float) -> list[dict]:
     if months < 1:
         return [_insight("emergency", "warn", "Poco colchón de emergencia", text + " La meta recomendada son 3 a 6 meses.")]
     if months < 3:
-        return [_insight("emergency", "warn", "Tu fondo de emergencia aún es corto", text + " La meta recomendada son 3 a 6 meses.")]
+        return [_insight("emergency", "warn", "Tu fondo de emergencia aún es corto",
+                         text + " La meta recomendada son 3 a 6 meses.")]
     if months < 6:
-        return [_insight("emergency", "info", "Buen avance en tu fondo de emergencia", text + " Llegar a 6 meses te da más tranquilidad.")]
+        return [_insight("emergency", "info", "Buen avance en tu fondo de emergencia",
+                         text + " Llegar a 6 meses te da más tranquilidad.")]
     return [_insight("emergency", "good", "Fondo de emergencia sólido", text)]
 
 

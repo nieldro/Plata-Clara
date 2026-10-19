@@ -57,7 +57,7 @@ def schedule(debt_id: int, extra: float = Query(0, ge=0),
         base = finance.amortize(balance, r, payment)
         plan = finance.amortize(balance, r, payment, extra)
     except ValueError as e:
-        raise HTTPException(422, str(e))
+        raise HTTPException(422, str(e)) from e
     return {
         "monthly_rate_pct": round(r * 100, 4),
         "payment": round(payment, 2),

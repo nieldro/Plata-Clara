@@ -1,4 +1,3 @@
-from datetime import date
 from app.clock import today as clock_today
 
 from conftest import category_id

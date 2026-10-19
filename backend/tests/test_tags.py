@@ -1,4 +1,3 @@
-from datetime import date
 from app.clock import today as clock_today
 
 from app.services.tags import normalize
@@ -56,7 +55,7 @@ def test_limits(client, auth, bank):
 
 
 def test_delete_tag_keeps_transactions_and_delete_tx_keeps_tag(client, auth, bank):
-    tx = add(client, auth, bank, 100, ["temp"])
+    add(client, auth, bank, 100, ["temp"])
     tag = client.get("/api/tags", headers=auth).json()[0]
     assert client.delete(f"/api/tags/{tag['id']}", headers=auth).status_code == 204
     assert client.get("/api/transactions", headers=auth).json()[0]["tags"] == []

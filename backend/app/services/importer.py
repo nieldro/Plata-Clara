@@ -74,7 +74,8 @@ def _xlsx_cell(v):
 
 def read_xlsx(data: bytes) -> list[list]:
     if not data.startswith(b"PK\x03\x04"):
-        raise ImportError_("Ese archivo no es un Excel (.xlsx) válido. Los .xls antiguos no se soportan: guárdalo como .xlsx o CSV")
+        raise ImportError_(
+            "Ese archivo no es un Excel (.xlsx) válido. Los .xls antiguos no se soportan: guárdalo como .xlsx o CSV")
     try:
         from openpyxl import load_workbook
 

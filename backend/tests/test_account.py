@@ -1,6 +1,6 @@
 import json
 import time
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from app.clock import today as clock_today
 from pathlib import Path
 

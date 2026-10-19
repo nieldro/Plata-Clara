@@ -1,5 +1,5 @@
 import io
-from datetime import date, timedelta
+from datetime import date
 from app.clock import today as clock_today
 
 from pypdf import PdfReader

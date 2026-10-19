@@ -1,6 +1,5 @@
 """Informe mensual en PDF (reportlab), pensado para imprimir: fondo blanco y acentos dorados."""
 import io
-from datetime import date
 from decimal import Decimal
 from xml.sax.saxutils import escape
 
@@ -150,7 +149,8 @@ def build_report(db: Session, user: User, month: str) -> bytes:
                          cop(b["amount"]) if b else "—", f"{b['pct']:.0f}%" if b else "—"])
         if rest:
             other = sum((v for _, v in rest), Decimal(0))
-            rows.append(["", _p(f"Otras ({len(rest)} categorías)", s["cell"]), cop(other), f"{other / total * 100:.0f}%", "—", "—"])
+            rows.append(["", _p(f"Otras ({len(rest)} categorías)", s["cell"]), cop(other),
+                         f"{other / total * 100:.0f}%", "—", "—"])
         table = _table(rows, [0.35 * cm, 3.7 * cm, 2.6 * cm, 2.1 * cm, 2.6 * cm, 1.4 * cm], align_right=(2, 3, 4, 5))
         for i, (cat_id, _) in enumerate(shown, start=1):
             b = budgets.get(cat_id)

@@ -1,0 +1,16 @@
+[tool.ruff]
+line-length = 130
+target-version = "py312"
+extend-exclude = ["alembic/versions"]  # migraciones autogeneradas: no se reformatean
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
+ignore = [
+    "E701", "E702",  # varias sentencias en una línea: se usan en pruebas por brevedad
+    "E741",          # nombres cortos como «l» en comprensiones
+    "B008",          # Depends() / Query() como valor por defecto es el patrón normal de FastAPI
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011", "B017", "E501"]  # en las pruebas se agrupan datos en una línea por legibilidad
+"alembic/env.py" = ["E402"]

@@ -179,7 +179,7 @@ def split_expense(data: SplitIn, db: Session = Depends(get_db), user: User = Dep
         apply_to_card(db, tx.account_id, "expense", mine, +1)
 
     created = []
-    for p, share in zip(people, shares):
+    for p, share in zip(people, shares, strict=True):
         loan = Loan(user_id=user.id, person=p.person.strip(), direction="lent", amount=share, date=data.date,
                     due_date=data.due_date, note=label)
         db.add(loan)

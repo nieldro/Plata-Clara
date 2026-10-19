@@ -87,7 +87,7 @@ async def preview(
     try:
         table = importer.read_table(file.filename or "", data)
     except importer.ImportError_ as e:
-        raise HTTPException(422, str(e))
+        raise HTTPException(422, str(e)) from e
 
     header_index = importer.find_header(table)
     if header_index is None and has_header:
@@ -111,7 +111,7 @@ async def preview(
         parsed = importer.build_rows(table, mapping, header_index, account_id=account_id,
                                      date_order=date_order, invert=invert)
     except importer.ImportError_ as e:
-        raise HTTPException(422, str(e))
+        raise HTTPException(422, str(e)) from e
 
     dups = _mark_duplicates(db, user.id, account_id, parsed)
     cache: dict[tuple, dict | None] = {}

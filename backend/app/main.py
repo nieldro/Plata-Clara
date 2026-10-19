@@ -17,8 +17,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Finanzas Personales", version="0.1.0", lifespan=lifespan)
 
 api = APIRouter(prefix="/api")
-for r in (auth.router, account.router, core.router, exports.router, reports.router, budgets.router, recurring.router, notifications.router,
-          assistant.router, tags.router, rules.router, imports.router, attachments.router, loans.router, debts.router, savings.router, simulator.router):
+for r in (
+    auth.router, account.router, core.router, exports.router, reports.router, budgets.router, recurring.router,
+    notifications.router, assistant.router, tags.router, rules.router, imports.router, attachments.router,
+    loans.router, debts.router, savings.router, simulator.router,
+):
     api.include_router(r)
 app.include_router(api)
 

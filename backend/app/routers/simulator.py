@@ -34,7 +34,7 @@ def payoff(data: PayoffSimIn):
     try:
         plan = finance.amortize(data.balance, r, data.payment)
     except ValueError as e:
-        raise HTTPException(422, str(e))
+        raise HTTPException(422, str(e)) from e
     return {"monthly_rate_pct": round(r * 100, 4), **plan}
 
 
