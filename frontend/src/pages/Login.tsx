@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { FormEvent, useState } from "react";
 import { api } from "../api";
 import { Logo } from "../components/Icons";
+import useEscape from "../hooks/useEscape";
 import { EASE } from "../theme";
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export default function AuthModal({ mode, onMode, onClose, onDone }: Props) {
+  useEscape(onClose);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const register = mode === "register";

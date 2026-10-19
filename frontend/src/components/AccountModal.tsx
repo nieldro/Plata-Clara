@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { ACCOUNT_TYPES, AccountType, api, Institution, loadInstitutions } from "../api";
+import useEscape from "../hooks/useEscape";
 import { EASE } from "../theme";
 import InstitutionLogo from "./InstitutionLogo";
 
@@ -14,6 +15,7 @@ const DEFAULT_TYPE: Record<string, AccountType> = {
 };
 
 export default function AccountModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscape(onClose);
   const [insts, setInsts] = useState<Institution[]>([]);
   const [query, setQuery] = useState("");
   const [choice, setChoice] = useState<Choice>(null);

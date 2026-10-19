@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FormEvent, useState } from "react";
 import { Account, api, Category, splitTags, Tx } from "../api";
+import useEscape from "../hooks/useEscape";
 import { EASE } from "../theme";
 import TagInput from "./TagInput";
 
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export default function EditTransactionModal({ tx, accounts, cats, suggestions, onClose, onSaved }: Props) {
+  useEscape(onClose);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 

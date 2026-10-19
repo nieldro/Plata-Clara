@@ -1,11 +1,13 @@
 import { motion } from "framer-motion";
 import { FormEvent, useEffect, useState } from "react";
 import { Account, api, Debt } from "../api";
+import useEscape from "../hooks/useEscape";
 import { EASE } from "../theme";
 
 type Props = { account: Account; onClose: () => void; onSaved: () => void };
 
 export default function EditAccountModal({ account, onClose, onSaved }: Props) {
+  useEscape(onClose);
   const isCard = account.type === "credit_card";
   const [debt, setDebt] = useState<Debt | null>(null);
   const [error, setError] = useState("");

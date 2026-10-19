@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { api, Attachment, getBlob, money, Tx } from "../api";
+import useEscape from "../hooks/useEscape";
 import { EASE } from "../theme";
 
 const MAX_MB = 5;
 const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
 export default function ReceiptsModal({ tx, onClose, onChanged }: { tx: Tx; onClose: () => void; onChanged: () => void }) {
+  useEscape(onClose);
   const [items, setItems] = useState<Attachment[]>([]);
   const [thumbs, setThumbs] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
