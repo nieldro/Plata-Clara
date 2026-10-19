@@ -139,6 +139,8 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.card.crash { max-width: 560px; margin: 12vh auto; border-color: rgba(229, 138, 138, 0.3); }
+.card.crash pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; color: var(--muted); }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); flex: 1 1 150px; }
 .field small { text-transform: none; letter-spacing: 0; }
 .report-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }

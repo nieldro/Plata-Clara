@@ -12,6 +12,7 @@ import Settings from "../pages/Settings";
 import Simulator from "../pages/Simulator";
 import Transactions from "../pages/Transactions";
 import { EASE } from "../theme";
+import ErrorBoundary from "./ErrorBoundary";
 import { Icons, Logo } from "./Icons";
 import NotificationBell from "./NotificationBell";
 
@@ -76,7 +77,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.45, ease: EASE }}
           >
-            {ready && <Page />}
+            {ready && <ErrorBoundary resetKey={tab}><Page /></ErrorBoundary>}
           </motion.div>
         </AnimatePresence>
       </section>

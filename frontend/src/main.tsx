@@ -6,6 +6,7 @@ import Lenis from "lenis";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./styles.css";
 
 // Scroll suave (Lenis). Se desactiva si el usuario pidió menos movimiento.
@@ -29,6 +30,8 @@ document.addEventListener("pointermove", (e) => {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary scope="app">
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
