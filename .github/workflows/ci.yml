@@ -35,6 +35,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm test
       - run: npm run build
 
   # Aquí sí hay Docker: se construyen las imágenes de producción para comprobar que los Dockerfile funcionan.
