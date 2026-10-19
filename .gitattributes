@@ -1,0 +1,14 @@
+# Saltos de línea LF en el repositorio y en la copia de trabajo, en Windows y en Linux:
+# sin avisos de «LF will be replaced by CRLF» y sin diferencias falsas entre sistemas.
+* text=auto eol=lf
+
+# Archivos binarios: Git no debe tocarlos.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.xlsx binary
+*.woff binary
+*.woff2 binary
