@@ -166,7 +166,8 @@ export default function Savings() {
                       <tr key={c.id}>
                         <td>{c.date}</td><td>{c.note}</td>
                         <td className={`num ${Number(c.amount) >= 0 ? "pos" : "neg"}`}>{Number(c.amount) >= 0 ? "+" : "−"}{money(Math.abs(Number(c.amount)))}</td>
-                        <td><button className="link" aria-label="Borrar aporte" onClick={() => removeContribution(g.id, c.id)}>✕</button></td>
+                        <td><button className="link" aria-label="Borrar aporte"
+                          onClick={() => confirm("¿Borrar este movimiento de la meta? El ahorro de la meta se ajusta.") && removeContribution(g.id, c.id)}>✕</button></td>
                       </tr>
                     ))}
                   </tbody>

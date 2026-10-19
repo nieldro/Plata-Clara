@@ -180,7 +180,8 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
                     {!t.transfer_id && !t.loan_id && <button className="link" title="Editar" aria-label="Editar movimiento" onClick={() => onEdit(t)}>✎</button>}
                     {t.loan_id
                       ? <small title="Se gestiona desde «Quién me debe»">en Préstamos</small>
-                      : <button className="link" title="Borrar" aria-label="Borrar movimiento" onClick={() => api.del(`/transactions/${t.id}`).then(onChanged)}>✕</button>}
+                      : <button className="link" title="Borrar" aria-label="Borrar movimiento"
+                          onClick={() => confirm(`¿Borrar «${t.note || "movimiento"}» de ${money(t.amount)}? El saldo de la cuenta se ajusta.`) && api.del(`/transactions/${t.id}`).then(onChanged)}>✕</button>}
                   </td>
                 </tr>
               );

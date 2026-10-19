@@ -84,7 +84,8 @@ export default function Debts() {
                 <td>
                   <button onClick={() => project(d.id)}>Proyectar</button>{" "}
                   <button onClick={() => pay(d.id)}>Registrar pago</button>{" "}
-                  <button className="link" aria-label={`Eliminar ${d.name}`} onClick={() => api.del(`/debts/${d.id}`).then(load)}>✕</button>
+                  <button className="link" aria-label={`Eliminar ${d.name}`}
+                    onClick={() => confirm(`¿Eliminar «${d.name}»? Se pierde también su historial de pagos.`) && api.del(`/debts/${d.id}`).then(load)}>✕</button>
                 </td>
               </tr>
             ))}
