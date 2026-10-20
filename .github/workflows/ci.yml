@@ -50,6 +50,20 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker compose -f docker-compose.prod.yml config --quiet
       - run: docker compose -f docker-compose.prod.yml build
+      - name: La web (nginx) sirve la app con sus cabeceras, el manifiesto y el proxy a la API
+        run: |
+          docker compose -f docker-compose.prod.yml up -d
+          for i in $(seq 1 40); do curl -fs -o /dev/null http://localhost/ && break; sleep 2; done
+          H=$(curl -sI http://localhost/)
+          echo "$H"
+          echo "$H" | grep -qi "content-security-policy" || { echo "FALTA la CSP en /"; exit 1; }
+          echo "$H" | grep -qi "x-frame-options: DENY" || { echo "FALTA X-Frame-Options en /"; exit 1; }
+          curl -sI http://localhost/sw.js | grep -qi "cache-control: no-cache" || { echo "sw.js no debe cachearse"; exit 1; }
+          curl -sf http://localhost/manifest.webmanifest | grep -q '"Plata Clara"' || { echo "manifiesto no servido"; exit 1; }
+          curl -sfI http://localhost/icons/icon-512.png > /dev/null || { echo "ícono no servido"; exit 1; }
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/auth/me)
+          [ "$CODE" = "401" ] || { echo "el proxy a la API falló (código $CODE, se esperaba 401)"; exit 1; }
+          echo "Web, manifiesto y proxy correctos"
       - name: La API arranca y aplica las migraciones sobre PostgreSQL
         run: |
           docker compose -f docker-compose.prod.yml up -d db backend

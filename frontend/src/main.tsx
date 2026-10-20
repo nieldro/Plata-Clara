@@ -19,6 +19,13 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
   requestAnimationFrame(raf);
 }
 
+// App instalable y con carcasa sin conexión. Solo en producción: en desarrollo un service worker estorba (cachea).
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => { /* sin service worker la app funciona igual */ });
+  });
+}
+
 // Brillo que sigue al cursor dentro de las tarjetas.
 document.addEventListener("pointermove", (e) => {
   const card = (e.target as HTMLElement).closest?.<HTMLElement>(".card");
