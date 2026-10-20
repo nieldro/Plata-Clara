@@ -9,8 +9,33 @@ from ..deps import current_user, owned
 from ..models import Account, Debt, DebtPayment, User
 from ..schemas import DebtIn, DebtOut, DebtPaymentIn, DebtPaymentOut
 from ..services import finance
+from ..services.strategies import DebtState, compare, minimum_payment
 
 router = APIRouter(prefix="/debts", tags=["deudas"])
+
+
+@router.get("/strategies")
+def strategies(extra: float = Query(0, ge=0, le=1_000_000_000), db: Session = Depends(get_db),
+               user: User = Depends(current_user)):
+    """Compara pagar primero la deuda más cara (avalancha) o la más pequeña (bola de nieve).
+
+    `extra` es lo que puedes pagar de más cada mes por encima de los mínimos."""
+    debts = db.scalars(select(Debt).where(Debt.user_id == user.id, Debt.current_balance > 0).order_by(Debt.id)).all()
+    if len(debts) < 1:
+        raise HTTPException(422, "No tienes deudas con saldo para comparar")
+    states = []
+    for d in debts:
+        r = finance.monthly_rate(float(d.rate), d.rate_type)
+        bal = float(d.current_balance)
+        states.append(DebtState(d.id, d.name, bal, r, minimum_payment(bal, r, d.monthly_payment, d.term_months)))
+    result = compare(states, extra)
+    a, s = result["avalanche"], result["snowball"]
+    both = a["finished"] and s["finished"]
+    result["debts"] = [{"id": d.id, "name": d.name, "balance": d.balance, "rate_pct": round(d.rate * 100, 3),
+                        "minimum": round(d.minimum, 2)} for d in states]
+    result["interest_saved_by_avalanche"] = round(s["total_interest"] - a["total_interest"], 2) if both else None
+    result["recommended"] = "avalanche" if both and a["total_interest"] <= s["total_interest"] else "snowball"
+    return result
 
 
 @router.get("", response_model=list[DebtOut])
