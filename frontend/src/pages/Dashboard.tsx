@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { Account, api, Debt, download, localMonth, money } from "../api";
 import CountUp from "../components/CountUp";
+import UpcomingCard from "../components/UpcomingCard";
 import { GOLD, MUTED, NEG, PIE_COLORS, tooltipStyle } from "../theme";
 
 type Summary = {
@@ -79,6 +80,8 @@ export default function Dashboard() {
         </div>
         {reportError && <p className="error">{reportError}</p>}
       </div>
+
+      <UpcomingCard />
 
       <div className="two">
         <div className="card">
