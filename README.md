@@ -122,6 +122,31 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Importar extracto, Quién m
 - **Dividir una cuenta:** pagaste entre varios; solo tu parte es gasto (y entra a tu presupuesto), lo demás queda como
   «te deben». Partes iguales (los centavos sobrantes te tocan a ti) o montos distintos.
 
+### Planeación y análisis (pantalla Resumen y «Mi año»)
+- **Próximos 30 días:** lo que viene, en orden: recurrentes, vencimientos de tarjetas y créditos (según el día de pago) y
+  préstamos con fecha límite. Los cobros vencidos salen primero.
+- **Tu dinero en los próximos días:** proyección día a día de tu efectivo (sin contar la deuda de las tarjetas, pero sí sus
+  cuotas) con aviso de **cuándo quedarías en negativo**. Los pagos sin monto y los cobros vencidos no se cuentan, y se dice.
+- **Patrimonio en el tiempo:** dinero en cuentas menos deudas, al cierre de cada mes. Las cuentas se reconstruyen exactas;
+  las deudas de meses pasados son una **estimación** (se deshacen desde hoy tus compras y pagos).
+- **Dónde más gastas:** el gasto del mes agrupado por comercio según la nota («Éxito Calle 80» y «EXITO chapinero» juntos).
+- **Mi año:** mes a mes, mejor y peor mes, tasa de ahorro, promedio mensual y gasto por categoría.
+- **Presupuesto por día:** en el mes en curso cada presupuesto dice cuánto puedes gastar por día y si a tu ritmo te pasarías.
+- **Estrategias de deuda:** compara *avalancha* (la más cara primero) y *bola de nieve* (la más pequeña primero) con lo que
+  puedas pagar de más al mes, y cuánto interés se ahorra cada una.
+
+### Captura más rápida
+- **Registro rápido:** escribe «café 4.500 ayer con nequi #trabajo» (o «uber 12 mil», «nómina 3.000.000») y la app
+  propone monto, fecha, cuenta, etiquetas y categoría para que lo revises antes de guardar. Entiende `4.500`, `4,5`,
+  `50k`, `50 mil`, `1,3 millones`, «hoy/ayer/anteayer», «hace 3 días» y `15/10`. Es un intérprete de reglas, sin IA.
+- **Aviso de duplicados:** al guardar, si ya existe un movimiento con la misma cuenta, tipo y monto en ±2 días, pregunta.
+
+### App instalable
+Se puede instalar en el celular o el computador («Agregar a la pantalla de inicio»). El *service worker* guarda solo la
+carcasa de la app (HTML, JS, CSS, íconos) para abrir rápido y mostrar algo sin internet; **nunca guarda respuestas de `/api`**,
+así que tus datos financieros no se almacenan en el dispositivo por este medio. Solo se activa en producción.
+Para cambiar los íconos: `python frontend/scripts/make_icons.py` (necesita Pillow).
+
 ### Informes, exportación y tu cuenta
 - **Informe mensual en PDF** (pantalla Resumen): resumen del mes, comparación con el mes anterior, gasto por categoría
   contra tu presupuesto, mayores gastos, cuentas y patrimonio, y préstamos pendientes.
@@ -153,7 +178,7 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Importar extracto, Quién m
 
 ## Pruebas y CI
 ```powershell
-cd backend;  .\.venv\Scripts\python.exe -m pytest -q       # 217 pruebas del backend
+cd backend;  .\.venv\Scripts\python.exe -m pytest -q       # 309 pruebas del backend
 cd backend;  .\.venv\Scripts\ruff.exe check .              # análisis de código (lint)
 cd frontend; npm test                                      # 15 pruebas del frontend (vitest)
 ```
@@ -161,7 +186,8 @@ Las pruebas del backend corren sobre SQLite en memoria **con llaves foráneas ac
 de archivos nueva en cada prueba, y verifican que las migraciones coincidan con los modelos. GitHub Actions corre en
 cada push:
 - `ci.yml`: lint y pruebas del backend, pruebas y build del frontend, y **construcción de las imágenes de Docker** de
-  producción con la API arrancando sobre PostgreSQL.
+  producción: la API arranca sobre PostgreSQL y se comprueba que nginx sirve la app con sus cabeceras (CSP,
+  X-Frame-Options), el manifiesto y los íconos, y que `/api` llega a la API.
 - `secrets.yml`: escaneo de secretos (gitleaks) sobre toda la historia.
 
 > **Nota:** las pruebas usan SQLite; el despliegue usa PostgreSQL. Las consultas son estándar SQLAlchemy, pero conviene
@@ -173,7 +199,8 @@ cada push:
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 Solo queda expuesta la web (nginx, puerto 80 o `WEB_PORT`); la API y la base viven en la red interna de Docker. nginx
-añade cabeceras de seguridad (CSP, X-Frame-Options, nosniff…) y reenvía `/api` a la API **sobrescribiendo**
+añade cabeceras de seguridad (CSP, X-Frame-Options, nosniff…, definidas en `frontend/security-headers.conf` e incluidas
+en cada `location`: en nginx un `add_header` dentro de un location anula los del servidor) y reenvía `/api` a la API **sobrescribiendo**
 `X-Forwarded-For` con la IP real, para que el límite de intentos no se pueda esquivar con una IP inventada.
 **Pon HTTPS delante** (Caddy, Cloudflare o un balanceador) antes de usarla fuera de tu casa: sin HTTPS la contraseña y la
 sesión viajan sin cifrar. Si el proxy HTTPS es un servicio de nube compartido, la «IP real» que ve nginx será la del
