@@ -1,6 +1,6 @@
 import { AnimatePresence } from "framer-motion";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, localDate, money, splitTags, TagSummary, Tx } from "../api";
+import { ACCOUNT_TYPES, Account, api, Category, confirmIfDuplicate, Institution, loadInstitutions, localDate, money, splitTags, TagSummary, Tx } from "../api";
 import AccountModal from "../components/AccountModal";
 import EditAccountModal from "../components/EditAccountModal";
 import EditTransactionModal from "../components/EditTransactionModal";
@@ -72,6 +72,8 @@ export default function Transactions() {
     setError("");
     const form = e.currentTarget;
     const f = new FormData(form);
+    const candidate = { account_id: Number(f.get("account")), amount: Number(f.get("amount")), date: String(f.get("date")), kind: f.get("kind") as "income" | "expense" };
+    if (!(await confirmIfDuplicate(candidate))) return;
     try {
       await api.post("/transactions", {
         account_id: Number(f.get("account")),

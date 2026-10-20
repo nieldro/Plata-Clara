@@ -51,6 +51,22 @@ export async function getPage<T>(path: string): Promise<{ items: T[]; total: num
   return { items, total: Number(res.headers.get("X-Total-Count") ?? items.length) };
 }
 
+/** Si ya hay un movimiento casi idéntico (misma cuenta, tipo y monto, ±2 días), pregunta si de verdad se quiere guardar otro. */
+export async function confirmIfDuplicate(m: { account_id: number; amount: number; date: string; kind: "income" | "expense" }): Promise<boolean> {
+  try {
+    const found = await request<{ date: string; note: string; amount: number | string }[]>(
+      `/transactions/similar?account_id=${m.account_id}&amount=${m.amount}&date=${m.date}&kind=${m.kind}`);
+    if (found.length === 0) return true;
+    const first = found[0];
+    const what = first.note ? `«${first.note}»` : "un movimiento";
+    return confirm(
+      `Ya registraste ${what} por ${money(first.amount)} el ${first.date}` +
+      `${found.length > 1 ? ` (y ${found.length - 1} más parecido${found.length > 2 ? "s" : ""})` : ""}.\n\n¿Guardar este de todos modos?`);
+  } catch {
+    return true; // si no se pudo comprobar, no se estorba: es solo un aviso
+  }
+}
+
 /** Descarga un archivo protegido (lleva el token) como Blob, para mostrarlo o abrirlo. */
 export async function getBlob(path: string): Promise<Blob> {
   return (await send(path)).blob();

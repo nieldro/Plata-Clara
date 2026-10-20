@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Account, api, Category, money, splitTags } from "../api";
+import { Account, api, Category, confirmIfDuplicate, money, splitTags } from "../api";
 
 type Parsed = {
   ready: boolean; amount: number | string | null; kind: "income" | "expense"; date: string; note: string; tags: string[];
@@ -44,6 +44,8 @@ export default function QuickAdd({ accounts, cats, onCreated }: { accounts: Acco
     if (!draft) return;
     setBusy(true);
     setError("");
+    const ok = await confirmIfDuplicate({ account_id: Number(draft.accountId), amount: Number(draft.amount), date: draft.date, kind: draft.kind });
+    if (!ok) return setBusy(false);
     try {
       await api.post("/transactions", {
         account_id: Number(draft.accountId), category_id: draft.categoryId ? Number(draft.categoryId) : null,

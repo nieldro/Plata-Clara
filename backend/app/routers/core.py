@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from typing import Literal
@@ -251,6 +251,23 @@ def list_transactions(
         response.headers["X-Total-Count"] = str(total)
     stmt = select(Transaction).where(*conds).order_by(Transaction.date.desc(), Transaction.id.desc())
     return db.scalars(stmt.limit(limit).offset(offset)).all()
+
+
+@router.get("/transactions/similar")
+def similar_transactions(account_id: int, amount: Decimal = Query(..., gt=0), when: date = Query(..., alias="date"),
+                         kind: Literal["income", "expense"] = "expense", window: int = Query(2, ge=0, le=10),
+                         db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Movimientos casi idénticos (misma cuenta, tipo y monto, con hasta `window` días de diferencia).
+
+    Sirve para avisar «¿ya lo registraste?» antes de guardar; no bloquea nada."""
+    owned(db, Account, account_id, user)
+    rows = db.scalars(
+        select(Transaction).where(
+            Transaction.user_id == user.id, Transaction.account_id == account_id, Transaction.kind == kind,
+            Transaction.amount == amount, Transaction.transfer_id.is_(None), Transaction.loan_id.is_(None),
+            Transaction.date >= when - timedelta(days=window), Transaction.date <= when + timedelta(days=window))
+        .order_by(Transaction.date.desc(), Transaction.id.desc()).limit(5)).all()
+    return [{"id": t.id, "date": t.date, "note": t.note, "amount": t.amount} for t in rows]
 
 
 @router.post("/transactions", response_model=TransactionOut, status_code=201)
