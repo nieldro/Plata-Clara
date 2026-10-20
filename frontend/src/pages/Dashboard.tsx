@@ -3,6 +3,7 @@ import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContaine
 import { Account, api, Debt, download, localMonth, money } from "../api";
 import CountUp from "../components/CountUp";
 import ForecastCard from "../components/ForecastCard";
+import MerchantsCard from "../components/MerchantsCard";
 import NetWorthCard from "../components/NetWorthCard";
 import UpcomingCard from "../components/UpcomingCard";
 import { GOLD, MUTED, NEG, PIE_COLORS, tooltipStyle } from "../theme";
@@ -86,6 +87,7 @@ export default function Dashboard() {
       <ForecastCard />
       <UpcomingCard />
       <NetWorthCard />
+      <MerchantsCard month={month} />
 
       <div className="two">
         <div className="card">
