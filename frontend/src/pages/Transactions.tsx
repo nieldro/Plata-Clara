@@ -4,6 +4,7 @@ import { ACCOUNT_TYPES, Account, api, Category, Institution, loadInstitutions, l
 import AccountModal from "../components/AccountModal";
 import EditAccountModal from "../components/EditAccountModal";
 import EditTransactionModal from "../components/EditTransactionModal";
+import QuickAdd from "../components/QuickAdd";
 import ReceiptsModal from "../components/ReceiptsModal";
 import RulesSection from "../components/RulesSection";
 import TagInput from "../components/TagInput";
@@ -168,6 +169,8 @@ export default function Transactions() {
           <small>Banco, billetera, inversión o tarjeta</small>
         </button>
       </div>
+
+      <QuickAdd accounts={accounts} cats={cats} onCreated={load} />
 
       <div className="card">
         <h2>Nuevo movimiento</h2>
