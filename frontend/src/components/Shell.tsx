@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useEffect, useState } from "react";
 import { api } from "../api";
+import Annual from "../pages/Annual";
 import Assistant from "../pages/Assistant";
 import Budgets from "../pages/Budgets";
 import Dashboard from "../pages/Dashboard";
@@ -19,6 +20,7 @@ import NotificationBell from "./NotificationBell";
 const TABS: { key: string; label: string; icon: ReactNode; page: () => JSX.Element }[] = [
   { key: "home", label: "Resumen", icon: Icons.home, page: Dashboard },
   { key: "tx", label: "Cuentas y movimientos", icon: Icons.swap, page: Transactions },
+  { key: "annual", label: "Mi año", icon: Icons.calendar, page: Annual },
   { key: "import", label: "Importar extracto", icon: Icons.upload, page: Import },
   { key: "loans", label: "Quién me debe", icon: Icons.users, page: Loans },
   { key: "budgets", label: "Presupuestos", icon: Icons.pie, page: Budgets },
