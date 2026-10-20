@@ -58,9 +58,15 @@ def account_balances(db: Session, user_id: int) -> dict[int, Decimal]:
     return {acc: total for acc, total in rows}
 
 
-def budget_rows(db: Session, user_id: int, month: str) -> list[dict]:
-    """Cada presupuesto con lo gastado en el mes, lo que queda y el % usado."""
+def budget_rows(db: Session, user_id: int, month: str, today: date | None = None) -> list[dict]:
+    """Cada presupuesto con lo gastado en el mes, lo que queda y el % usado.
+
+    En el mes en curso añade el ritmo: cuánto puedes gastar por día y si a este paso te pasarías."""
+    today = today or clock.today()
     start, end = month_bounds(month)
+    current = month == today.strftime("%Y-%m")
+    days_in_month = (end - start).days
+    days_left = days_in_month - today.day + 1  # incluye hoy
     spent = spent_by_category(db, user_id, start, end)
     rows = db.execute(
         select(Budget, Category.name)
@@ -71,12 +77,20 @@ def budget_rows(db: Session, user_id: int, month: str) -> list[dict]:
     out = []
     for budget, name in rows:
         used = spent.get(budget.category_id) or Decimal(0)
-        out.append({
+        row = {
             "category_id": budget.category_id,
             "category": name,
             "amount": budget.amount,
             "spent": used,
             "remaining": budget.amount - used,
             "pct": round(float(used / budget.amount * 100), 1),
-        })
+            "daily_allowance": None, "projected_spend": None, "projected_over": None,
+        }
+        if current:
+            remaining = max(budget.amount - used, Decimal(0))
+            projected = (used / today.day * days_in_month).quantize(Decimal("0.01"))
+            row["daily_allowance"] = (remaining / days_left).quantize(Decimal("0.01"))
+            row["projected_spend"] = projected
+            row["projected_over"] = projected > budget.amount
+        out.append(row)
     return out

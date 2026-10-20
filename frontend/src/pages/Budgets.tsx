@@ -4,7 +4,10 @@ import { api, Category, localMonth, money } from "../api";
 import RecurringSection from "../components/RecurringSection";
 import { EASE } from "../theme";
 
-type Item = { category_id: number; category: string; amount: number; spent: number; remaining: number; pct: number };
+type Item = {
+  category_id: number; category: string; amount: number; spent: number; remaining: number; pct: number;
+  daily_allowance: number | string | null; projected_spend: number | string | null; projected_over: boolean | null;
+};
 
 const shift = (month: string, delta: number) => {
   const d = new Date(Number(month.slice(0, 4)), Number(month.slice(5)) - 1 + delta, 1);
@@ -102,6 +105,16 @@ export default function Budgets() {
                 {Number(i.remaining) < 0 ? `Excedido ${money(-Number(i.remaining))}` : `Quedan ${money(i.remaining)}`}
               </span>
             </p>
+            {i.daily_allowance !== null && (
+              <p className="pace">
+                {Number(i.remaining) <= 0
+                  ? <span className="neg">Ya agotaste este presupuesto.</span>
+                  : <>Puedes gastar <b>{money(i.daily_allowance)}</b> por día lo que resta del mes.</>}
+                {i.projected_over && Number(i.remaining) > 0 && (
+                  <span className="neg"> A tu ritmo actual terminarías en {money(i.projected_spend ?? 0)}: te pasarías.</span>
+                )}
+              </p>
+            )}
             <small>Tope {money(i.amount)}</small>{" "}
             <button className="link" onClick={() => edit(i)}>Editar</button>
             <button className="link" onClick={() => api.del(`/budgets/${i.category_id}`).then(load)}>Quitar</button>
