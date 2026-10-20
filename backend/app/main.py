@@ -8,8 +8,8 @@ from . import models  # noqa: F401  (registra las tablas)
 from .db import get_db
 from .migrate import run_migrations
 from .routers import (account, assistant, attachments, auth, budgets, core, debts, exports, imports, insights,
-                      loans, networth, notifications, recurring, reports, rules, savings, simulator, tags,
-                      upcoming)
+                      loans, networth, notifications, quickadd, recurring, reports, rules, savings, simulator,
+                      tags, upcoming)
 
 
 @asynccontextmanager
@@ -42,7 +42,8 @@ api = APIRouter(prefix="/api")
 for r in (
     auth.router, account.router, core.router, exports.router, reports.router, budgets.router, recurring.router,
     notifications.router, assistant.router, tags.router, rules.router, imports.router, attachments.router,
-    loans.router, debts.router, savings.router, simulator.router, upcoming.router, networth.router, insights.router,
+    loans.router, debts.router, savings.router, simulator.router, upcoming.router, networth.router,
+    insights.router, quickadd.router,
 ):
     api.include_router(r)
 app.include_router(api)
