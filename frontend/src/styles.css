@@ -142,6 +142,13 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.strategies { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 10px 0; }
+.strategy { position: relative; padding: 18px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); }
+.strategy.best { border-color: var(--gold); background: rgba(201, 169, 106, 0.07); }
+.strategy h3 { font-size: 24px; }
+.strategy .pill { position: absolute; top: 12px; right: 12px; }
+.strategy ol { margin: 8px 0 0; padding-left: 20px; }
+.s-big { font-family: var(--serif); font-size: 28px; margin: 8px 0 2px; line-height: 1.1; }
 .range { display: inline-flex; gap: 2px; }
 .range .link.on { color: var(--gold-soft); border-bottom: 1px solid var(--gold); border-radius: 0; }
 .warn-line { margin: 0 0 8px; padding: 10px 14px; border-radius: 12px; color: #f0c36b; background: rgba(240, 195, 107, 0.08); border: 1px solid rgba(240, 195, 107, 0.3); }

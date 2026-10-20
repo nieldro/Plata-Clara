@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api, Debt, localDate, money, Plan } from "../api";
 import ScheduleTable from "../components/ScheduleTable";
+import StrategiesCard from "../components/StrategiesCard";
 
 export default function Debts() {
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -92,6 +93,8 @@ export default function Debts() {
           </tbody>
         </table>
       </div>
+
+      <StrategiesCard debtCount={debts.filter((d) => Number(d.current_balance) > 0).length} />
 
       {plan && (
         <div className="card">
