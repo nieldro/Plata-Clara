@@ -83,6 +83,33 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
   const acc = (id: number) => accounts.find((a) => a.id === id);
   const catName = (id: number | null) => cats.find((c) => c.id === id)?.name ?? "—";
 
+  // Vistas guardadas: una combinación de filtros con nombre.
+  type View = { id: number; name: string; params: Record<string, string> };
+  const [views, setViews] = useState<View[]>([]);
+  const loadViews = useCallback(() => api.get<View[]>("/saved-filters").then(setViews).catch(() => setViews([])), []);
+  useEffect(() => { loadViews(); }, [loadViews]);
+  const activeParams = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== "")) as Record<string, string>;
+  const sameParams = (a: Record<string, string>, b: Record<string, string>) =>
+    Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([k, v]) => b[k] === v);
+  const currentView = views.find((v) => sameParams(v.params, activeParams));
+
+  async function saveView() {
+    const name = prompt("Nombre para esta vista (ej. «Gastos de Nequi mayores a 100 mil»)")?.trim();
+    if (!name) return;
+    try {
+      await api.post("/saved-filters", { name, params: activeParams });
+      await loadViews();
+      setError("");
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+  async function deleteView(v: View) {
+    if (!confirm(`¿Borrar la vista «${v.name}»? Tus movimientos no cambian.`)) return;
+    await api.del(`/saved-filters/${v.id}`);
+    loadViews();
+  }
+
   const [exporting, setExporting] = useState(false);
   async function exportAs(format: "csv" | "xlsx") {
     setExporting(true);
@@ -119,6 +146,20 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
         Historial{accountFilter && acc(accountFilter) ? ` · ${acc(accountFilter)!.name}` : ""}
         {accountFilter && <button className="link" onClick={onClearAccount}>Ver todas las cuentas</button>}
       </h2>
+
+      {(views.length > 0 || active) && (
+        <div className="views">
+          {views.length > 0 && (
+            <select value={currentView?.id ?? ""} aria-label="Vistas guardadas"
+              onChange={(e) => { const v = views.find((x) => x.id === Number(e.target.value)); if (v) setF({ ...EMPTY, ...v.params }); }}>
+              <option value="">{currentView ? "Cambiar de vista…" : "Abrir una vista guardada…"}</option>
+              {views.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+            </select>
+          )}
+          {currentView && <button className="link" onClick={() => deleteView(currentView)}>Borrar esta vista</button>}
+          {active && !currentView && <button className="btn-ghost" onClick={saveView}>＋ Guardar estos filtros como vista</button>}
+        </div>
+      )}
 
       <div className="filters">
         <input className="grow" type="search" placeholder="Buscar por nota o categoría…" value={f.q} onChange={set("q")} />

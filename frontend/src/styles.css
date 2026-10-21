@@ -142,6 +142,8 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.views { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.views .btn-ghost { padding: 7px 14px; font-size: 13px; }
 .amount-input { width: 130px; text-align: right; padding: 6px 10px; }
 .check-col { width: 34px; padding-right: 0; }
 .check-col input { accent-color: var(--gold); width: 16px; height: 16px; padding: 0; }
