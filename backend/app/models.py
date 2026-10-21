@@ -120,6 +120,17 @@ class LoanPayment(Base):
     transaction_id: Mapped[int | None] = mapped_column(ForeignKey("transactions.id"), nullable=True)
 
 
+class SavedFilter(Base):
+    """Una combinación de filtros del historial guardada con nombre («Gastos de Nequi > 100 mil»)."""
+    __tablename__ = "saved_filters"
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(60))
+    params: Mapped[str] = mapped_column(String(2000))  # JSON {filtro: valor}; se valida al guardar
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class Tag(Base):
     """Etiqueta libre para seguir un proyecto o tema (viaje-cartagena, regalo-mama...)."""
     __tablename__ = "tags"

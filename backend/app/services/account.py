@@ -7,7 +7,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from ..models import (Account, Attachment, Budget, Category, CategoryRule, Debt, DebtPayment, Loan, LoanPayment,
-                      Notification, Recurring, SavingsContribution, SavingsGoal, Tag, Transaction, User,
+                      Notification, Recurring, SavedFilter, SavingsContribution, SavingsGoal, Tag, Transaction, User,
                       transaction_tags)
 from . import uploads
 
@@ -15,7 +15,9 @@ from . import uploads
 OWNED = [("accounts", Account), ("categories", Category), ("transactions", Transaction), ("budgets", Budget),
          ("recurring", Recurring), ("debts", Debt), ("savings_goals", SavingsGoal), ("loans", Loan),
          ("tags", Tag), ("category_rules", CategoryRule), ("notifications", Notification),
-         ("attachments", Attachment)]
+         ("attachments", Attachment), ("saved_filters", SavedFilter)]
+# Al crear una tabla con columna user_id hay que agregarla aquí (exportar) y en delete_user (borrar la cuenta);
+# tests/test_account.py::test_every_user_table_is_exported_and_deleted falla si se olvida.
 
 
 def _plain(value):
@@ -94,6 +96,7 @@ def delete_user(db: Session, user: User) -> None:
         db.execute(delete(SavingsContribution).where(SavingsContribution.goal_id.in_(c)))
     db.execute(delete(SavingsGoal).where(SavingsGoal.user_id == uid))
     db.execute(delete(Notification).where(Notification.user_id == uid))
+    db.execute(delete(SavedFilter).where(SavedFilter.user_id == uid))
     db.execute(delete(User).where(User.id == uid))
     db.commit()
     for name in stored:  # los archivos se borran después de confirmar la base

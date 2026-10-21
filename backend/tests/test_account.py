@@ -126,6 +126,22 @@ def test_delete_account_leaves_other_users_untouched(client, auth, bank):
     assert len(client.get("/api/categories", headers=other).json()) == 9
 
 
+def test_every_user_table_is_exported_and_deleted():
+    """Guardia: una tabla nueva con user_id debe entrar a exportar y a borrar cuenta (si no, se filtran o bloquean datos)."""
+    import inspect
+
+    from app.db import Base
+    from app.models import User  # noqa: F401  (carga todos los modelos)
+    from app.services import account as svc
+
+    with_user = {t.name for t in Base.metadata.tables.values() if "user_id" in t.c and t.name != "users"}
+    exported = {model.__tablename__ for _, model in svc.OWNED}
+    assert with_user == exported, f"Faltan en OWNED: {with_user - exported}; sobran: {exported - with_user}"
+    source = inspect.getsource(svc.delete_user)
+    missing = [model.__name__ for _, model in svc.OWNED if model.__name__ not in source]
+    assert not missing, f"delete_user no borra: {missing}"
+
+
 def test_delete_account_needs_the_right_password(client, auth, bank):
     assert client.post("/api/account/delete", headers=auth, json={"password": "equivocada"}).status_code == 403
     assert client.get("/api/auth/me", headers=auth).status_code == 200  # sigue existiendo

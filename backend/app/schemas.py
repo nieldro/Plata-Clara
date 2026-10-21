@@ -149,6 +149,26 @@ class TransactionUpdate(BaseModel):
     tags: list[str] | None = None  # None = no cambiar; [] = quitar todas
 
 
+FILTER_KEYS = {"q", "date_from", "date_to", "min_amount", "max_amount", "category", "kind", "account", "tag"}
+
+
+class SavedFilterIn(BaseModel):
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
+    params: dict[str, str]
+
+    @model_validator(mode="after")
+    def _only_known_filters(self):
+        unknown = set(self.params) - FILTER_KEYS
+        if unknown:
+            raise ValueError(f"Filtros desconocidos: {', '.join(sorted(unknown))}")
+        self.params = {k: v.strip() for k, v in self.params.items() if v and v.strip()}
+        if not self.params:
+            raise ValueError("Aplica al menos un filtro antes de guardar la vista")
+        if any(len(v) > 100 for v in self.params.values()):
+            raise ValueError("Un valor de filtro es demasiado largo")
+        return self
+
+
 class TagRename(BaseModel):
     name: str = Field(min_length=1, max_length=60)  # se normaliza en la ruta (#, mayúsculas, espacios)
 
