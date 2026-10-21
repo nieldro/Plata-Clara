@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api, Category, localMonth, money } from "../api";
+import BudgetSuggestions from "../components/BudgetSuggestions";
 import RecurringSection from "../components/RecurringSection";
 import { EASE } from "../theme";
 
@@ -121,6 +122,8 @@ export default function Budgets() {
           </div>
         ))}
       </div>
+
+      <BudgetSuggestions onApplied={load} />
 
       <RecurringSection />
     </>
