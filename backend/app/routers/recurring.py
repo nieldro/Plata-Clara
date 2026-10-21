@@ -7,6 +7,7 @@ from ..deps import current_user, owned
 from ..models import Account, Category, Recurring, User
 from ..schemas import RecurringIn, RecurringOut
 from ..services import recurring as svc
+from ..services.recurring_detect import detect
 from ..services.notifications import notify_recurring
 
 router = APIRouter(prefix="/recurring", tags=["recurrentes"])
@@ -15,6 +16,12 @@ router = APIRouter(prefix="/recurring", tags=["recurrentes"])
 @router.get("", response_model=list[RecurringOut])
 def list_recurring(db: Session = Depends(get_db), user: User = Depends(current_user)):
     return db.scalars(select(Recurring).where(Recurring.user_id == user.id).order_by(Recurring.next_date)).all()
+
+
+@router.get("/suggestions")
+def suggestions(db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Gastos o ingresos que parecen repetirse (3 veces o más, a intervalos regulares) y aún no son recurrentes."""
+    return detect(db, user.id)
 
 
 @router.post("", response_model=RecurringOut, status_code=201)
