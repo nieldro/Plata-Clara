@@ -317,6 +317,22 @@ class BudgetIn(BaseModel):
     amount: Decimal = Field(gt=0)
 
 
+class ApplyBudgetItem(BaseModel):
+    category_id: int
+    amount: Decimal = Field(gt=0, lt=Decimal("1000000000000"))
+
+
+class ApplyBudgetsIn(BaseModel):
+    items: list[ApplyBudgetItem] = Field(min_length=1, max_length=50)
+
+    @model_validator(mode="after")
+    def _no_repeats(self):
+        ids = [i.category_id for i in self.items]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Hay categorías repetidas")
+        return self
+
+
 # --- ahorro ---
 class GoalIn(BaseModel):
     name: str
