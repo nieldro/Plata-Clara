@@ -15,7 +15,7 @@ from ..deps import current_user, owned
 from ..institutions import INSTITUTIONS, SLUGS
 from ..models import (Account, Attachment, Budget, Category, CategoryRule, Debt, DebtPayment, LoanPayment,
                       Recurring, Tag, Transaction, User, transaction_tags)
-from ..schemas import (AccountIn, AccountOut, AccountUpdate, CategoryIn, CategoryOut,
+from ..schemas import (AccountIn, AccountOut, AccountUpdate, CategoryIn, CategoryRename, CategoryOut,
                        TransactionIn, TransactionOut, TransactionUpdate, TransferIn)
 from ..services.ledger import apply_to_card
 from ..services.queries import account_balances
@@ -150,6 +150,22 @@ def create_category(data: CategoryIn, db: Session = Depends(get_db), user: User 
         raise HTTPException(409, f"Ya tienes una categoría «{data.name}» {kind}")
     cat = Category(user_id=user.id, **data.model_dump())
     db.add(cat)
+    db.commit()
+    db.refresh(cat)
+    return cat
+
+
+@router.patch("/categories/{category_id}", response_model=CategoryOut)
+def rename_category(category_id: int, data: CategoryRename, db: Session = Depends(get_db),
+                    user: User = Depends(current_user)):
+    """Cambia el nombre de una categoría; sus movimientos, presupuestos y reglas la siguen."""
+    cat = owned(db, Category, category_id, user)
+    clash = db.scalar(select(Category.id).where(
+        Category.user_id == user.id, Category.kind == cat.kind, Category.id != cat.id,
+        func.lower(Category.name) == data.name.lower()))
+    if clash:
+        raise HTTPException(409, f"Ya tienes una categoría «{data.name}» de ese tipo")
+    cat.name = data.name
     db.commit()
     db.refresh(cat)
     return cat

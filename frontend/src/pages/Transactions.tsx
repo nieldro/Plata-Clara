@@ -123,6 +123,18 @@ export default function Transactions() {
     }
   }
 
+  async function renameCategory(c: Category) {
+    const name = prompt(`Nuevo nombre para la categoría «${c.name}»`, c.name)?.trim();
+    if (!name || name === c.name) return;
+    try {
+      await api.patch(`/categories/${c.id}`, { name });
+      setCats(await api.get("/categories"));
+      load();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   async function removeCategory(c: Category) {
     if (!confirm(`¿Borrar la categoría «${c.name}»? Sus movimientos quedarán sin categoría.`)) return;
     await api.del(`/categories/${c.id}`);
@@ -233,6 +245,7 @@ export default function Transactions() {
           {cats.map((c) => (
             <span key={c.id} className={`chip ${c.kind}`}>
               {c.name}
+              <button className="link" title="Renombrar" aria-label={`Renombrar la categoría ${c.name}`} onClick={() => renameCategory(c)}>✎</button>
               <button className="link" title="Borrar" aria-label={`Borrar la categoría ${c.name}`} onClick={() => removeCategory(c)}>✕</button>
             </span>
           ))}

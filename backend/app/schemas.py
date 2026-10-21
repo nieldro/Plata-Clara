@@ -111,6 +111,10 @@ class CategoryIn(BaseModel):
     kind: Literal["income", "expense"]
 
 
+class CategoryRename(BaseModel):
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+
+
 class CategoryOut(ORM, CategoryIn):
     id: int
 
