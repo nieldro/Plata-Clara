@@ -50,28 +50,34 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker compose -f docker-compose.prod.yml config --quiet
       - run: docker compose -f docker-compose.prod.yml build
-      - name: La web (nginx) sirve la app con sus cabeceras, el manifiesto y el proxy a la API
+      - name: La API migra sobre PostgreSQL y nginx sirve la app (cabeceras, manifiesto y proxy)
         run: |
-          docker compose -f docker-compose.prod.yml up -d
-          for i in $(seq 1 40); do curl -fs -o /dev/null http://localhost/ && break; sleep 2; done
-          H=$(curl -sI http://localhost/)
-          echo "$H"
-          echo "$H" | grep -qi "content-security-policy" || { echo "FALTA la CSP en /"; exit 1; }
-          echo "$H" | grep -qi "x-frame-options: DENY" || { echo "FALTA X-Frame-Options en /"; exit 1; }
-          curl -sI http://localhost/sw.js | grep -qi "cache-control: no-cache" || { echo "sw.js no debe cachearse"; exit 1; }
-          curl -sf http://localhost/manifest.webmanifest | grep -q '"Plata Clara"' || { echo "manifiesto no servido"; exit 1; }
-          curl -sfI http://localhost/icons/icon-512.png > /dev/null || { echo "ícono no servido"; exit 1; }
-          CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/auth/me)
-          [ "$CODE" = "401" ] || { echo "el proxy a la API falló (código $CODE, se esperaba 401)"; exit 1; }
-          echo "Web, manifiesto y proxy correctos"
-      - name: La API arranca y aplica las migraciones sobre PostgreSQL
-        run: |
-          docker compose -f docker-compose.prod.yml up -d db backend
-          for i in $(seq 1 30); do
-            if docker compose -f docker-compose.prod.yml exec -T backend python -c "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"; then
-              echo "API arriba"; exit 0
-            fi
+          C="docker compose -f docker-compose.prod.yml"
+          # Cada falla deja un mensaje público (::error::) con el motivo y las últimas líneas del backend.
+          fail() {
+            echo "::error::$1"
+            echo "::error::backend (últimas líneas): $($C logs --no-color --tail 20 backend 2>&1 | tr '\n' '|')"
+            exit 1
+          }
+          $C up -d
+
+          # 1) La API tarda en estar lista (aplica las migraciones al arrancar): se espera a que conteste por nginx.
+          code=""
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/auth/me || true)
+            [ "$code" = "401" ] && break
             sleep 2
           done
-          docker compose -f docker-compose.prod.yml logs backend
-          exit 1
+          [ "$code" = "401" ] || fail "la API no respondió a través de nginx en 2 minutos (último código: $code; se esperaba 401)"
+          $C exec -T backend python -c "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health/ready', timeout=5)" \
+            || fail "/health/ready falló: la base de datos no responde"
+
+          # 2) La web: cabeceras de seguridad, service worker, manifiesto e íconos.
+          H=$(curl -sI http://localhost/)
+          echo "$H"
+          echo "$H" | grep -qi "content-security-policy" || fail "falta la CSP en /"
+          echo "$H" | grep -qi "x-frame-options: DENY" || fail "falta X-Frame-Options en /"
+          curl -sI http://localhost/sw.js | grep -qi "cache-control: no-cache" || fail "sw.js no debe guardarse en caché"
+          curl -sf http://localhost/manifest.webmanifest | grep -q '"Plata Clara"' || fail "el manifiesto no se sirve"
+          curl -sfI http://localhost/icons/icon-512.png > /dev/null || fail "el ícono no se sirve"
+          echo "API, migraciones, web, manifiesto y proxy correctos"
