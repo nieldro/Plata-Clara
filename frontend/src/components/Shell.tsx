@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useEffect, useState } from "react";
-import { api } from "../api";
+import { api, isPrivate, setPrivate } from "../api";
 import Annual from "../pages/Annual";
 import Assistant from "../pages/Assistant";
 import Budgets from "../pages/Budgets";
@@ -44,6 +44,10 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
   const current = TABS.find((t) => t.key === tab)!;
   const Page = current.page;
 
+  // Modo privacidad: al cambiarlo se vuelve a dibujar la pantalla para que todos los montos se actualicen.
+  const [priv, setPriv] = useState(isPrivate());
+  const togglePrivacy = () => { setPrivate(!priv); setPriv(!priv); };
+
   // El título de la pestaña del navegador dice en qué sección estás; al salir se restaura el original.
   useEffect(() => {
     const original = document.title;
@@ -75,7 +79,13 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
             <small>{name ? `Hola, ${name}` : " "}</small>
             <h1>{current.label}</h1>
           </div>
-          {ready && <NotificationBell />}
+          <div className="head-tools">
+            <button className="bell" onClick={togglePrivacy} aria-pressed={priv}
+              aria-label={priv ? "Mostrar los montos" : "Ocultar los montos"} title={priv ? "Mostrar los montos" : "Ocultar los montos"}>
+              {priv ? Icons.eyeOff : Icons.eye}
+            </button>
+            {ready && <NotificationBell />}
+          </div>
         </header>
         <AnimatePresence mode="wait">
           <motion.div
@@ -86,7 +96,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.45, ease: EASE }}
           >
-            {ready && <ErrorBoundary resetKey={tab}><Page /></ErrorBoundary>}
+            {ready && <ErrorBoundary resetKey={tab}><Page key={String(priv)} /></ErrorBoundary>}
           </motion.div>
         </AnimatePresence>
       </section>

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { localDate, localMonth, money, splitTags } from "./api";
+import { afterEach, describe, expect, it } from "vitest";
+import { isPrivate, localDate, localMonth, money, setPrivate, splitTags } from "./api";
 
 describe("localDate / localMonth", () => {
   it("usan la fecha local, no la de UTC (el error que adelantaba el día por la noche en Colombia)", () => {
@@ -35,6 +35,33 @@ describe("splitTags", () => {
     expect(splitTags(null)).toEqual([]);
     expect(splitTags("")).toEqual([]);
     expect(splitTags("   ")).toEqual([]);
+  });
+});
+
+describe("modo privacidad", () => {
+  afterEach(() => setPrivate(false)); // que una prueba no deje el modo activado para las demás
+
+  it("oculta cualquier monto, sin dejar ver ni un dígito", () => {
+    setPrivate(true);
+    expect(isPrivate()).toBe(true);
+    for (const value of [0, 1234567, "50000", -999, 0.5]) {
+      const text = money(value);
+      expect(text).toContain("•");
+      expect(text).not.toMatch(/\d/);
+    }
+  });
+
+  it("al desactivarlo vuelve a mostrar los montos", () => {
+    setPrivate(true);
+    setPrivate(false);
+    expect(isPrivate()).toBe(false);
+    expect(money(1234567).replace(/\s| /g, "")).toBe("$1.234.567");
+  });
+
+  it("funciona aunque el navegador no permita guardar la preferencia", () => {
+    // en este entorno de pruebas no existe localStorage: no debe lanzar errores
+    expect(() => setPrivate(true)).not.toThrow();
+    expect(isPrivate()).toBe(true);
   });
 });
 

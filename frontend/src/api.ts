@@ -13,8 +13,21 @@ export const localDate = (d: Date = new Date()) =>
 /** Mes actual (AAAA-MM) en la hora del usuario. */
 export const localMonth = (d: Date = new Date()) => localDate(d).slice(0, 7);
 
+// Modo privacidad: oculta todos los montos de la pantalla (por si alguien mira por encima del hombro).
+const PRIVACY_KEY = "privacy";
+const HIDDEN = "$ ••••••";
+let hideAmounts = (() => {
+  try { return localStorage.getItem(PRIVACY_KEY) === "1"; } catch { return false; }
+})();
+
+export const isPrivate = () => hideAmounts;
+export function setPrivate(value: boolean) {
+  hideAmounts = value;
+  try { value ? localStorage.setItem(PRIVACY_KEY, "1") : localStorage.removeItem(PRIVACY_KEY); } catch { /* sin almacenamiento: dura mientras la página siga abierta */ }
+}
+
 export const money = (n: number | string) =>
-  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(n));
+  hideAmounts ? HIDDEN : new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(n));
 
 async function send(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);

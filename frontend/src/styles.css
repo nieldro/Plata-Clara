@@ -142,6 +142,8 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.head-tools { display: flex; align-items: center; gap: 10px; }
+.bell[aria-pressed="true"] { border-color: var(--gold); color: var(--gold-soft); }
 .switches { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
 .switches label { display: flex; align-items: center; gap: 12px; cursor: pointer; }
 .switches input[type="checkbox"] { appearance: none; flex: none; width: 40px; height: 22px; padding: 0; border-radius: 99px; position: relative; cursor: pointer; background: var(--line); border: 1px solid var(--line); transition: background 0.3s, border-color 0.3s; }
