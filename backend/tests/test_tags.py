@@ -65,6 +65,56 @@ def test_delete_tag_keeps_transactions_and_delete_tx_keeps_tag(client, auth, ban
     assert [t["count"] for t in client.get("/api/tags", headers=auth).json()] == [0]
 
 
+def tag_id(client, auth, name):
+    return next(t["id"] for t in client.get("/api/tags", headers=auth).json() if t["name"] == name)
+
+
+def rename(client, auth, tid, name):
+    return client.patch(f"/api/tags/{tid}", headers=auth, json={"name": name})
+
+
+def test_rename_a_tag_everywhere(client, auth, bank):
+    add(client, auth, bank, 100, ["viaje"])
+    r = rename(client, auth, tag_id(client, auth, "viaje"), "  #Viaje Cartagena ")
+    assert r.json()["name"] == "viaje-cartagena" and r.json()["merged"] is False
+    assert client.get("/api/transactions", headers=auth).json()[0]["tags"] == ["viaje-cartagena"]
+    assert rename(client, auth, tag_id(client, auth, "viaje-cartagena"), "VIAJE-cartagena").json()["moved"] == 0  # mismo nombre
+
+
+def test_renaming_into_an_existing_tag_merges_without_duplicates(client, auth, bank):
+    only_a = add(client, auth, bank, 100, ["viaje"])["id"]
+    both = add(client, auth, bank, 200, ["viaje", "viajes"])["id"]
+    only_b = add(client, auth, bank, 300, ["viajes"])["id"]
+    r = rename(client, auth, tag_id(client, auth, "viaje"), "viajes").json()
+    assert r["merged"] is True and r["name"] == "viajes" and r["moved"] == 1   # solo «only_a» necesitaba moverse
+    tags = client.get("/api/tags", headers=auth).json()
+    assert [(t["name"], t["count"]) for t in tags] == [("viajes", 3)]          # «viaje» desapareció y nadie quedó repetido
+    by_id = {t["id"]: t["tags"] for t in client.get("/api/transactions", headers=auth).json()}
+    assert by_id == {only_a: ["viajes"], both: ["viajes"], only_b: ["viajes"]}
+
+
+def test_merge_never_goes_over_the_ten_tag_limit(client, auth, bank):
+    names = [f"t{i}" for i in range(9)]
+    full = add(client, auth, bank, 1, [*names, "viejo"])["id"]   # 9 + 1 = 10 etiquetas, el máximo
+    add(client, auth, bank, 1, ["nuevo"])
+    rename(client, auth, tag_id(client, auth, "viejo"), "nuevo")
+    tags = {t["id"]: t["tags"] for t in client.get("/api/transactions", headers=auth).json()}
+    assert len(tags[full]) == 10 and "nuevo" in tags[full] and "viejo" not in tags[full]  # cambió una por otra: sigue en 10
+
+
+def test_rename_validation_and_privacy(client, auth, bank):
+    add(client, auth, bank, 100, ["mia"])
+    tid = tag_id(client, auth, "mia")
+    assert rename(client, auth, tid, "  # ").status_code == 422
+    assert rename(client, auth, tid, "x" * 31).status_code == 422
+    assert client.patch(f"/api/tags/{tid}", headers=auth, json={}).status_code == 422
+    assert rename(client, auth, 9999, "otra").status_code == 404
+    assert client.patch(f"/api/tags/{tid}", json={"name": "otra"}).status_code == 401
+    client.post("/api/auth/register", json={"email": "o@o.co", "password": "12345678", "name": "Otro"})
+    tok = client.post("/api/auth/login", data={"username": "o@o.co", "password": "12345678"}).json()["access_token"]
+    assert client.patch(f"/api/tags/{tid}", headers={"Authorization": f"Bearer {tok}"}, json={"name": "hack"}).status_code == 404
+
+
 def test_tags_are_private_per_user(client, auth, bank):
     add(client, auth, bank, 100, ["secreta"])
     tag = client.get("/api/tags", headers=auth).json()[0]

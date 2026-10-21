@@ -149,6 +149,10 @@ class TransactionUpdate(BaseModel):
     tags: list[str] | None = None  # None = no cambiar; [] = quitar todas
 
 
+class TagRename(BaseModel):
+    name: str = Field(min_length=1, max_length=60)  # se normaliza en la ruta (#, mayúsculas, espacios)
+
+
 class BulkIn(BaseModel):
     """Una acción aplicada a varios movimientos a la vez."""
     ids: list[int] = Field(min_length=1, max_length=200)

@@ -123,6 +123,18 @@ export default function Transactions() {
     }
   }
 
+  async function renameTag(t: TagSummary) {
+    const name = prompt(`Nuevo nombre para #${t.name}\n(si ya existe una etiqueta con ese nombre, se fusionan)`, t.name)?.trim();
+    if (!name) return;
+    try {
+      const r = await api.patch<{ merged: boolean; moved: number; name: string }>(`/tags/${t.id}`, { name });
+      if (r.merged) alert(`Etiquetas fusionadas en #${r.name} (${r.moved} movimiento(s) pasaron a ella).`);
+      load();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   async function renameCategory(c: Category) {
     const name = prompt(`Nuevo nombre para la categoría «${c.name}»`, c.name)?.trim();
     if (!name || name === c.name) return;
@@ -272,6 +284,7 @@ export default function Transactions() {
                   <td className="num neg">−{money(t.expense)}</td>
                   <td className="num pos">{Number(t.income) > 0 ? `+${money(t.income)}` : ""}</td>
                   <td className="actions">
+                    <button className="link" title="Renombrar o fusionar" aria-label={`Renombrar la etiqueta ${t.name}`} onClick={() => renameTag(t)}>✎</button>
                     <button className="link" title="Quitar la etiqueta de todos los movimientos" aria-label={`Quitar la etiqueta ${t.name}`}
                       onClick={() => confirm(`¿Quitar la etiqueta #${t.name}? Los movimientos se conservan.`) && api.del(`/tags/${t.id}`).then(load)}>✕</button>
                   </td>
