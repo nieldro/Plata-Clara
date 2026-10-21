@@ -2,7 +2,9 @@
 
 Cada insight es {id, level, title, text}. level: warn (atender), info (dato útil), good (vas bien).
 """
-from datetime import date
+from datetime import date, timedelta
+from decimal import Decimal
+from statistics import median
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -67,6 +69,45 @@ def _category_spikes(db: Session, user_id: int, month: str) -> list[dict]:
         up = round((now / before - 1) * 100)
         out.append(_insight(f"spike-{cat}", "warn", f"Gastas {up}% más en {name}",
                             f"Van {cop(now)} este mes contra {cop(before)} el mes pasado."))
+    return out
+
+
+UNUSUAL_RATIO = 3          # una compra es «inusual» si vale 3 veces o más la compra típica de su categoría
+UNUSUAL_MIN_AMOUNT = 50_000  # y no es una cifra pequeña
+UNUSUAL_MIN_HISTORY = 5    # hace falta historial suficiente para saber qué es «típico»
+UNUSUAL_RECENT_DAYS = 30
+UNUSUAL_HISTORY_DAYS = 120
+
+
+def _unusual_spending(db: Session, user_id: int, today: date) -> list[dict]:
+    """Compras recientes mucho mayores que lo normal en su categoría."""
+    recent_from = today - timedelta(days=UNUSUAL_RECENT_DAYS)
+    base = [Transaction.user_id == user_id, Transaction.kind == "expense", Transaction.category_id.is_not(None),
+            Transaction.transfer_id.is_(None), Transaction.loan_id.is_(None)]
+    recent = db.scalars(select(Transaction).where(*base, Transaction.date > recent_from, Transaction.date <= today)).all()
+    if not recent:
+        return []
+    history: dict[int, list[Decimal]] = {}
+    for cat_id, amount in db.execute(select(Transaction.category_id, Transaction.amount).where(
+            *base, Transaction.date <= recent_from, Transaction.date > recent_from - timedelta(days=UNUSUAL_HISTORY_DAYS))):
+        history.setdefault(cat_id, []).append(amount)
+    names = dict(db.execute(select(Category.id, Category.name).where(Category.user_id == user_id)).all())
+
+    found = []
+    for t in recent:
+        sample = history.get(t.category_id, [])
+        if len(sample) < UNUSUAL_MIN_HISTORY or t.amount < UNUSUAL_MIN_AMOUNT:
+            continue
+        typical = median(sample)
+        if typical > 0 and t.amount >= typical * UNUSUAL_RATIO:
+            found.append((float(t.amount / typical), t, typical))
+    out = []
+    for ratio, t, typical in sorted(found, key=lambda f: -f[0])[:2]:
+        what = f"«{t.note}» " if t.note else ""
+        out.append(_insight(
+            f"unusual-{t.id}", "info", f"Gasto fuera de lo normal en {names.get(t.category_id, 'una categoría')}",
+            f"{what}por {cop(t.amount)} el {t.date.strftime('%d/%m')} es unas {ratio:.0f} veces tu compra típica en esa "
+            f"categoría ({cop(typical)}). Si no lo reconoces, revísalo."))
     return out
 
 
@@ -187,6 +228,7 @@ def insights(db: Session, user_id: int, today: date | None = None) -> list[dict]
     out = (
         _savings_rate(income, expense)
         + _category_spikes(db, user_id, month)
+        + _unusual_spending(db, user_id, today)
         + _budget_summary(db, user_id, month)
         + _debt_advice(debts)
         + _emergency_fund(cash, avg_expense)

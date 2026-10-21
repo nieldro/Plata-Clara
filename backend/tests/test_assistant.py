@@ -95,6 +95,58 @@ def test_goal_too_ambitious_warns(client, auth, bank):
     assert goal["level"] == "warn"
 
 
+def history(client, auth, bank, category, amounts, start_offset=-100, step=10):
+    for i, amount in enumerate(amounts):
+        day = date.fromordinal(date.today().toordinal() + start_offset + i * step)
+        client.post("/api/transactions", headers=auth, json={"account_id": bank["id"], "category_id": category, "kind": "expense",
+                                                             "amount": amount, "note": "compra", "date": day.isoformat()})
+
+
+def unusual(client, auth):
+    return [i for k, i in ask(client, auth).items() if k.startswith("unusual-")]
+
+
+def test_a_purchase_far_above_the_typical_one_is_flagged(client, auth, bank):
+    mercado = category_id(client, auth, "Mercado")
+    history(client, auth, bank, mercado, [80_000, 100_000, 90_000, 110_000, 100_000, 95_000])   # lo normal: ~100.000
+    tx(client, auth, bank, "expense", 450_000, category=mercado)                                 # hoy
+    [u] = unusual(client, auth)
+    # la mediana de ese historial es $97.500, así que $450.000 son 4,6 veces (se redondea a 5)
+    assert u["level"] == "info" and "Mercado" in u["title"] and "$450.000" in u["text"]
+    assert "5 veces" in u["text"] and "$97.500" in u["text"]
+
+
+def test_normal_or_small_purchases_and_thin_history_are_not_flagged(client, auth, bank):
+    mercado, ocio = category_id(client, auth, "Mercado"), category_id(client, auth, "Ocio")
+    history(client, auth, bank, mercado, [100_000] * 6)
+    tx(client, auth, bank, "expense", 250_000, category=mercado)                    # 2.5 veces: todavía normal
+    history(client, auth, bank, ocio, [100_000] * 3)                                # solo 3 de historial
+    tx(client, auth, bank, "expense", 900_000, category=ocio)
+    assert unusual(client, auth) == []
+    cheap = category_id(client, auth, "Transporte")
+    history(client, auth, bank, cheap, [5_000] * 6)
+    tx(client, auth, bank, "expense", 20_000, category=cheap)                       # 4 veces, pero es poca plata
+    assert unusual(client, auth) == []
+
+
+def test_old_purchases_and_income_are_not_reviewed(client, auth, bank):
+    mercado = category_id(client, auth, "Mercado")
+    history(client, auth, bank, mercado, [100_000] * 6)
+    old = date.fromordinal(date.today().toordinal() - 60).isoformat()
+    client.post("/api/transactions", headers=auth, json={"account_id": bank["id"], "category_id": mercado, "kind": "expense",
+                                                         "amount": 900_000, "date": old})                  # hace 2 meses: ya no es noticia
+    assert unusual(client, auth) == []
+
+
+def test_at_most_two_and_biggest_ratio_first(client, auth, bank):
+    mercado = category_id(client, auth, "Mercado")
+    history(client, auth, bank, mercado, [100_000] * 6)
+    for amount in (350_000, 700_000, 500_000):
+        tx(client, auth, bank, "expense", amount, category=mercado)
+    got = unusual(client, auth)
+    assert len(got) == 2 and "7 veces" in got[0]["text"] and "5 veces" in got[1]["text"]
+
+
 def test_warnings_come_first(client, auth, bank):
     tx(client, auth, bank, "income", 1_000_000)
     tx(client, auth, bank, "expense", 1_500_000)
