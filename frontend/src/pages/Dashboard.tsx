@@ -6,6 +6,7 @@ import ForecastCard from "../components/ForecastCard";
 import MerchantsCard from "../components/MerchantsCard";
 import NetWorthCard from "../components/NetWorthCard";
 import UpcomingCard from "../components/UpcomingCard";
+import WeeklyCard from "../components/WeeklyCard";
 import { GOLD, MUTED, NEG, PIE_COLORS, tooltipStyle } from "../theme";
 
 type Summary = {
@@ -84,6 +85,7 @@ export default function Dashboard() {
         {reportError && <p className="error">{reportError}</p>}
       </div>
 
+      <WeeklyCard />
       <ForecastCard />
       <UpcomingCard />
       <NetWorthCard />
