@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from app.clock import today as clock_today
 
 from app.services.queries import prev_month
+from app.services.spanish import MONTHS
 from conftest import category_id
 
 
@@ -145,6 +146,35 @@ def test_at_most_two_and_biggest_ratio_first(client, auth, bank):
         tx(client, auth, bank, "expense", amount, category=mercado)
     got = unusual(client, auth)
     assert len(got) == 2 and "7 veces" in got[0]["text"] and "5 veces" in got[1]["text"]
+
+
+def test_debt_free_date_is_projected_with_current_payments(client, auth, bank):
+    tx(client, auth, bank, "income", 1_000_000)
+    client.post("/api/debts", headers=auth, json={"name": "Préstamo", "kind": "loan", "original_amount": 1_200_000,
+                                                  "current_balance": 1_200_000, "rate": 0, "term_months": 12})
+    free = ask(client, auth)["debt-free"]
+    assert free["level"] == "good" and free["title"] == "Libre de deudas en 12 meses"
+    when = date.today().replace(day=1)
+    year, month0 = divmod(when.year * 12 + when.month - 1 + 12, 12)
+    assert f"{MONTHS[month0]} de {year}" in free["text"]
+
+
+def test_debt_free_singular_and_nothing_to_say_without_debts(client, auth, bank):
+    tx(client, auth, bank, "income", 1_000_000)
+    assert "debt-free" not in ask(client, auth)
+    client.post("/api/debts", headers=auth, json={"name": "Corto", "kind": "loan", "original_amount": 100, "current_balance": 100,
+                                                  "rate": 0, "monthly_payment": 100})
+    assert ask(client, auth)["debt-free"]["title"] == "Libre de deudas en 1 mes"
+
+
+def test_debt_free_warns_when_payments_do_not_cover_interest(client, auth, bank):
+    tx(client, auth, bank, "income", 1_000_000)
+    client.post("/api/debts", headers=auth, json={"name": "Trampa", "kind": "credit_card", "original_amount": 5_000_000,
+                                                  "current_balance": 5_000_000, "rate": 40, "rate_type": "EA", "monthly_payment": 10_000})
+    client.post("/api/debts", headers=auth, json={"name": "Sana", "kind": "loan", "original_amount": 100_000,
+                                                  "current_balance": 100_000, "rate": 0, "monthly_payment": 50_000})
+    free = ask(client, auth)["debt-free"]
+    assert free["level"] == "warn" and "Trampa" in free["text"] and "Sana" not in free["text"]
 
 
 def test_warnings_come_first(client, auth, bank):

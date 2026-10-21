@@ -9,7 +9,7 @@ from ..deps import current_user, owned
 from ..models import Account, Debt, DebtPayment, User
 from ..schemas import DebtIn, DebtOut, DebtPaymentIn, DebtPaymentOut
 from ..services import finance
-from ..services.strategies import DebtState, compare, minimum_payment
+from ..services.strategies import compare, states_from_debts
 
 router = APIRouter(prefix="/debts", tags=["deudas"])
 
@@ -23,11 +23,7 @@ def strategies(extra: float = Query(0, ge=0, le=1_000_000_000), db: Session = De
     debts = db.scalars(select(Debt).where(Debt.user_id == user.id, Debt.current_balance > 0).order_by(Debt.id)).all()
     if len(debts) < 1:
         raise HTTPException(422, "No tienes deudas con saldo para comparar")
-    states = []
-    for d in debts:
-        r = finance.monthly_rate(float(d.rate), d.rate_type)
-        bal = float(d.current_balance)
-        states.append(DebtState(d.id, d.name, bal, r, minimum_payment(bal, r, d.monthly_payment, d.term_months)))
+    states = states_from_debts(debts)
     result = compare(states, extra)
     a, s = result["avalanche"], result["snowball"]
     both = a["finished"] and s["finished"]

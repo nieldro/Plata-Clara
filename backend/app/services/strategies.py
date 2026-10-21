@@ -28,6 +28,16 @@ def minimum_payment(balance: float, r: float, monthly_payment: float | None, ter
     return balance * r + balance * 0.01
 
 
+def states_from_debts(debts) -> list[DebtState]:
+    """Convierte las deudas guardadas (modelo Debt) en el estado que usa la simulación."""
+    out = []
+    for d in debts:
+        r = finance.monthly_rate(float(d.rate), d.rate_type)
+        balance = float(d.current_balance)
+        out.append(DebtState(d.id, d.name, balance, r, minimum_payment(balance, r, d.monthly_payment, d.term_months)))
+    return out
+
+
 def simulate(debts: list[DebtState], budget: float, order, rollover: bool = True) -> dict:
     """Simula mes a mes. `order` decide a cuál deuda va lo que sobra después de pagar los mínimos."""
     states = [DebtState(d.id, d.name, d.balance, d.rate, d.minimum) for d in debts]

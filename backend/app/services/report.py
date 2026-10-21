@@ -18,9 +18,8 @@ from ..models import Account, Category, Debt, Loan, Transaction, User
 from .loans import paid_amounts
 from .notifications import cop
 from .queries import (account_balances, budget_rows, month_bounds, month_totals, prev_month, spent_by_category)
+from .spanish import MONTHS
 
-MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre",
-          "noviembre", "diciembre"]
 GOLD = colors.HexColor("#B8944F")
 INK = colors.HexColor("#1B1A17")
 MUTED = colors.HexColor("#6F6B60")

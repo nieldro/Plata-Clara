@@ -13,6 +13,9 @@ from .. import clock
 from ..models import Account, Category, Debt, SavingsGoal, Transaction
 from . import finance
 from .notifications import cop
+from .recurring import add_months
+from .spanish import MONTHS
+from .strategies import compare, states_from_debts
 from .queries import (account_balances, budget_rows, current_month, month_bounds, month_totals,
                       prev_month, spent_by_category)
 
@@ -164,6 +167,24 @@ def _debt_advice(debts: list[Debt]) -> list[dict]:
     return out
 
 
+def _debt_free(debts: list[Debt], today: date) -> list[dict]:
+    """¿Cuándo termino de pagar todo si sigo pagando lo mismo? (usa la estrategia de avalancha, que no cuesta más)."""
+    active = [d for d in debts if d.current_balance > 0]
+    if not active:
+        return []
+    plan = compare(states_from_debts(active), 0)["avalanche"]
+    if not plan["finished"]:
+        stuck = [o["name"] for o in plan["order"] if o["paid_in_month"] is None]
+        return [_insight("debt-free", "warn", "Con tus pagos actuales no sales de algunas deudas",
+                         f"Lo que pagas no alcanza para cubrir los intereses de: {', '.join(stuck)}. "
+                         "Sube el pago mensual o abona extra para que el saldo empiece a bajar.")]
+    when = add_months(today, plan["months"], today.day)
+    n = plan["months"]
+    return [_insight("debt-free", "good", f"Libre de deudas en {n} {'mes' if n == 1 else 'meses'}",
+                     f"Si sigues pagando lo mismo, terminarías de pagar todo en {MONTHS[when.month - 1]} de {when.year} "
+                     f"y habrías pagado {cop(plan['total_interest'])} en intereses. Abonar extra lo acerca.")]
+
+
 def _emergency_fund(cash: float, avg_expense: float) -> list[dict]:
     if avg_expense <= 0:
         return []
@@ -231,6 +252,7 @@ def insights(db: Session, user_id: int, today: date | None = None) -> list[dict]
         + _unusual_spending(db, user_id, today)
         + _budget_summary(db, user_id, month)
         + _debt_advice(debts)
+        + _debt_free(debts, today)
         + _emergency_fund(cash, avg_expense)
         + _goal_advice(goals, avg_net, today)
     )
