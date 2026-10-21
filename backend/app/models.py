@@ -26,6 +26,8 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     # Las sesiones (tokens) emitidas antes de este momento dejan de valer al cambiar la contraseña.
     password_changed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Tipos de aviso que la persona silenció, separados por coma (budget,due,goal,recurring,loan).
+    notif_muted: Mapped[str] = mapped_column(String(100), default="", server_default="")
 
 
 class Account(Base):

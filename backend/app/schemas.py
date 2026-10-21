@@ -317,6 +317,10 @@ class NotificationOut(ORM):
     created_at: datetime
 
 
+class NotificationPrefsIn(BaseModel):
+    muted: list[Literal["budget", "due", "goal", "loan", "recurring"]] = Field(max_length=5)
+
+
 # --- recurrentes ---
 class RecurringIn(BaseModel):
     account_id: int

@@ -5,21 +5,34 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import current_user, owned
 from ..models import Notification, User
-from ..schemas import NotificationOut
+from ..schemas import NotificationOut, NotificationPrefsIn
 from ..services import notifications as svc
+from ..services.notifications import KINDS, muted_kinds
 
 router = APIRouter(prefix="/notifications", tags=["notificaciones"])
 
 
 def _payload(db: Session, user_id: int, new: int = 0) -> dict:
-    items = db.scalars(
-        select(Notification).where(Notification.user_id == user_id)
-        .order_by(Notification.id.desc()).limit(50)
-    ).all()
-    unread = db.scalar(
-        select(func.count()).select_from(Notification).where(Notification.user_id == user_id, Notification.read.is_(False))
-    )
+    muted = muted_kinds(db, user_id)  # los tipos silenciados tampoco se muestran ni cuentan como no leídos
+    visible = [Notification.user_id == user_id, Notification.kind.not_in(muted)] if muted else [Notification.user_id == user_id]
+    items = db.scalars(select(Notification).where(*visible).order_by(Notification.id.desc()).limit(50)).all()
+    unread = db.scalar(select(func.count()).select_from(Notification).where(*visible, Notification.read.is_(False)))
     return {"unread": unread, "new": new, "items": [NotificationOut.model_validate(i) for i in items]}
+
+
+@router.get("/preferences")
+def get_preferences(db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Qué tipos de aviso quieres recibir."""
+    muted = muted_kinds(db, user.id)
+    return {"kinds": [{"kind": k, "label": label, "enabled": k not in muted} for k, label in KINDS.items()]}
+
+
+@router.put("/preferences")
+def set_preferences(data: NotificationPrefsIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Define los tipos de aviso que quieres silenciar (lista vacía = recibirlos todos)."""
+    user.notif_muted = ",".join(sorted(set(data.muted)))
+    db.commit()
+    return get_preferences(db, user)
 
 
 @router.get("")

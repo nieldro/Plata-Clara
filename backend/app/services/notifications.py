@@ -7,18 +7,34 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import clock
-from ..models import Debt, Loan, Notification, SavingsGoal
+from ..models import Debt, Loan, Notification, SavingsGoal, User
 from .queries import budget_rows
 
 DUE_WARNING_DAYS = 3
 GOAL_WARNING_DAYS = 30
+
+# Tipos de aviso que la persona puede silenciar, con su descripción para la pantalla de ajustes.
+KINDS = {
+    "budget": "Presupuestos (cuando llegas al 80 % o te pasas)",
+    "due": "Pagos de tarjetas y créditos que se acercan",
+    "goal": "Metas de ahorro (por vencer o logradas)",
+    "loan": "Préstamos con fecha límite",
+    "recurring": "Movimientos recurrentes que se registraron solos",
+}
 
 
 def cop(n) -> str:
     return "$" + f"{float(n):,.0f}".replace(",", ".")
 
 
+def muted_kinds(db: Session, user_id: int) -> set[str]:
+    user = db.get(User, user_id)
+    return {k for k in (user.notif_muted or "").split(",") if k in KINDS} if user else set()
+
+
 def _add(db: Session, user_id: int, key: str, kind: str, title: str, body: str) -> bool:
+    if kind in muted_kinds(db, user_id):  # la persona pidió no recibir este tipo de aviso
+        return False
     if db.scalar(select(Notification.id).where(Notification.user_id == user_id, Notification.key == key)):
         return False
     db.add(Notification(user_id=user_id, key=key, kind=kind, title=title, body=body))
