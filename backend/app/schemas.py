@@ -145,6 +145,24 @@ class TransactionUpdate(BaseModel):
     tags: list[str] | None = None  # None = no cambiar; [] = quitar todas
 
 
+class BulkIn(BaseModel):
+    """Una acción aplicada a varios movimientos a la vez."""
+    ids: list[int] = Field(min_length=1, max_length=200)
+    action: Literal["delete", "set_category", "add_tag", "remove_tag"]
+    category_id: int | None = None
+    clear_category: bool = False   # set_category sin categoría: deja los movimientos «sin categoría»
+    tag: str | None = Field(default=None, max_length=40)
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        self.ids = list(dict.fromkeys(self.ids))  # sin repetidos, conservando el orden
+        if self.action == "set_category" and self.category_id is None and not self.clear_category:
+            raise ValueError("Elige una categoría (o indica que quieres dejarlos sin categoría)")
+        if self.action in ("add_tag", "remove_tag") and not (self.tag or "").strip().lstrip("#").strip():
+            raise ValueError("Escribe el nombre de la etiqueta")
+        return self
+
+
 class TransferIn(BaseModel):
     from_account_id: int
     to_account_id: int
