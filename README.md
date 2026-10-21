@@ -141,6 +141,22 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Importar extracto, Quién m
   `50k`, `50 mil`, `1,3 millones`, «hoy/ayer/anteayer», «hace 3 días» y `15/10`. Es un intérprete de reglas, sin IA.
 - **Aviso de duplicados:** al guardar, si ya existe un movimiento con la misma cuenta, tipo y monto en ±2 días, pregunta.
 
+### Organizar y mantener tus datos
+- **Acciones en lote:** selecciona varios movimientos del historial (casillas) y recategorízalos, etiquétalos o bórralos de
+  una vez. Las transferencias y los préstamos se omiten (y se explica por qué); nunca afecta datos de otra persona.
+- **Vistas guardadas:** guarda una combinación de filtros con nombre («Gastos de Nequi mayores a 100 mil») y ábrela con un clic.
+- **Presupuestos sugeridos:** propone un tope por categoría según el promedio de tus últimos 3 meses completos (con 5 % de
+  holgura) y crea varios de una vez, con montos editables.
+- **Recurrentes detectados:** si algo se repite con regularidad (3 veces o más, mismo monto ±5 %, cada semana, quincena o
+  mes) te propone convertirlo en recurrente. La fecha de inicio es siempre futura, así que no se registran movimientos atrasados.
+- **Renombrar categorías y etiquetas:** conservan sus movimientos, presupuestos y reglas. Renombrar una etiqueta a un nombre
+  que ya existe las **fusiona** sin duplicar.
+- **Aviso de gasto inusual** y **«libre de deudas en X meses»** en el Asistente.
+- **Tu semana:** gasto de lunes a hoy contra los mismos días de la semana pasada, con barras por día.
+- **Preferencias de avisos:** en Ajustes puedes silenciar cada tipo (presupuestos, pagos, metas, préstamos, recurrentes).
+- **Cerrar sesión en los demás dispositivos** sin cambiar la contraseña.
+- **Modo privacidad:** el ojo del encabezado oculta todos los montos de la pantalla y recuerda tu elección.
+
 ### App instalable
 Se puede instalar en el celular o el computador («Agregar a la pantalla de inicio»). El *service worker* guarda solo la
 carcasa de la app (HTML, JS, CSS, íconos) para abrir rápido y mostrar algo sin internet; **nunca guarda respuestas de `/api`**,
@@ -178,9 +194,9 @@ Para cambiar los íconos: `python frontend/scripts/make_icons.py` (necesita Pill
 
 ## Pruebas y CI
 ```powershell
-cd backend;  .\.venv\Scripts\python.exe -m pytest -q       # 309 pruebas del backend
+cd backend;  .\.venv\Scripts\python.exe -m pytest -q       # 377 pruebas del backend
 cd backend;  .\.venv\Scripts\ruff.exe check .              # análisis de código (lint)
-cd frontend; npm test                                      # 15 pruebas del frontend (vitest)
+cd frontend; npm test                                      # 18 pruebas del frontend (vitest)
 ```
 Las pruebas del backend corren sobre SQLite en memoria **con llaves foráneas activadas** (como PostgreSQL), una carpeta
 de archivos nueva en cada prueba, y verifican que las migraciones coincidan con los modelos. GitHub Actions corre en
