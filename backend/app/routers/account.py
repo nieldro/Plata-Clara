@@ -40,6 +40,14 @@ def change_password(data: ChangePasswordIn, db: Session = Depends(get_db), user:
     return TokenOut(access_token=create_token(user.id))
 
 
+@router.post("/logout-all", response_model=TokenOut)
+def logout_everywhere(db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Cierra todas las sesiones abiertas (otros dispositivos, un celular perdido…) y deja esta con una sesión nueva."""
+    user.password_changed_at = utcnow_naive()  # el mismo mecanismo que al cambiar la contraseña: invalida lo anterior
+    db.commit()
+    return TokenOut(access_token=create_token(user.id))
+
+
 @router.get("/export")
 def export(db: Session = Depends(get_db), user: User = Depends(current_user)):
     """Descarga todos tus datos en un archivo JSON."""

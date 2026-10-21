@@ -56,6 +56,30 @@ def test_wrong_current_password_is_rate_limited(client, auth):
     assert client.post(url, headers=auth, json={"current_password": "12345678", "new_password": "nueva-clave-99"}).status_code == 429
 
 
+# ---------------------------------------------------------------- cerrar sesión en todos lados
+def old_token(client, auth):
+    user_id = client.get("/api/auth/me", headers=auth).json()["id"]
+    return jwt.encode({"sub": str(user_id), "iat": int(time.time()) - 600,
+                       "exp": datetime.now(timezone.utc) + timedelta(hours=1)}, settings.secret_key, algorithm="HS256")
+
+
+def test_logout_all_kills_other_sessions_but_keeps_the_current_one(client, auth):
+    other_device = old_token(client, auth)
+    assert client.get("/api/auth/me", headers=hdr(other_device)).status_code == 200
+    r = client.post("/api/account/logout-all", headers=auth)
+    assert r.status_code == 200
+    assert client.get("/api/auth/me", headers=hdr(other_device)).status_code == 401       # el otro dispositivo quedó fuera
+    assert client.get("/api/auth/me", headers=hdr(r.json()["access_token"])).status_code == 200  # esta sesión continúa
+    assert login(client).status_code == 200                                                 # y la contraseña sigue igual
+
+
+def test_logout_all_can_be_repeated_and_requires_login(client, auth):
+    first = client.post("/api/account/logout-all", headers=auth).json()["access_token"]
+    second = client.post("/api/account/logout-all", headers=hdr(first))
+    assert second.status_code == 200 and client.get("/api/auth/me", headers=hdr(second.json()["access_token"])).status_code == 200
+    assert client.post("/api/account/logout-all").status_code == 401
+
+
 # ---------------------------------------------------------------- exportar
 def seed(client, auth, bank):
     client.post("/api/transactions", headers=auth, json={"account_id": bank["id"], "kind": "expense", "amount": "1234.56",

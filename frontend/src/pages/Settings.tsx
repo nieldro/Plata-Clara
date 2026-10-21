@@ -33,6 +33,21 @@ export default function Settings() {
     }
   }
 
+  const [sessionMsg, setSessionMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  async function logoutEverywhere() {
+    if (!confirm("Se cerrará tu sesión en todos los demás dispositivos. Esta seguirá abierta. ¿Continuar?")) return;
+    setBusy("sessions");
+    try {
+      const r = await api.post<{ access_token: string }>("/account/logout-all");
+      setToken(r.access_token);
+      setSessionMsg({ ok: true, text: "Listo: cerramos las sesiones de los demás dispositivos." });
+    } catch (err) {
+      setSessionMsg({ ok: false, text: (err as Error).message });
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function exportData() {
     setBusy("data");
     try {
@@ -80,6 +95,13 @@ export default function Settings() {
           <button disabled={busy === "pw"}>{busy === "pw" ? "…" : "Cambiar contraseña"}</button>
         </form>
         {pwMsg && <p className={pwMsg.ok ? "ok-msg" : "error"}>{pwMsg.text}</p>}
+      </div>
+
+      <div className="card">
+        <h2>Sesiones</h2>
+        <p className="empty">¿Perdiste un celular o entraste desde un computador que no es tuyo? Cierra la sesión en todos los demás dispositivos sin cambiar tu contraseña.</p>
+        <div className="row"><button className="btn-ghost" disabled={busy === "sessions"} onClick={logoutEverywhere}>Cerrar sesión en los demás dispositivos</button></div>
+        {sessionMsg && <p className={sessionMsg.ok ? "ok-msg" : "error"}>{sessionMsg.text}</p>}
       </div>
 
       <div className="card">
