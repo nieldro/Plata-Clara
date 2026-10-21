@@ -3,6 +3,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api, Category, localMonth, money } from "../api";
 import BudgetSuggestions from "../components/BudgetSuggestions";
 import RecurringSection from "../components/RecurringSection";
+import RecurringSuggestions from "../components/RecurringSuggestions";
 import { EASE } from "../theme";
 
 type Item = {
@@ -24,6 +25,7 @@ export default function Budgets() {
   const [items, setItems] = useState<Item[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [error, setError] = useState("");
+  const [recVersion, setRecVersion] = useState(0); // al crear un recurrente desde una sugerencia, se recarga la lista
 
   const load = useCallback(async () => {
     const r = await api.get<{ items: Item[] }>(`/budgets?month=${month}`);
@@ -125,7 +127,8 @@ export default function Budgets() {
 
       <BudgetSuggestions onApplied={load} />
 
-      <RecurringSection />
+      <RecurringSuggestions onCreated={() => setRecVersion((v) => v + 1)} />
+      <RecurringSection key={recVersion} />
     </>
   );
 }
