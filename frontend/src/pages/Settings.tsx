@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api, download, setToken } from "../api";
+import NotificationPrefs from "../components/NotificationPrefs";
 
 type Me = { id: number; email: string; name: string };
 
@@ -66,6 +67,8 @@ export default function Settings() {
         <h2>Mi cuenta</h2>
         <p className="empty">{me ? <><b>{me.name}</b> · {me.email}</> : "Cargando…"}</p>
       </div>
+
+      <NotificationPrefs />
 
       <div className="card">
         <h2>Cambiar contraseña</h2>
