@@ -8,6 +8,7 @@ from ..models import User
 from ..services.annual import annual_summary
 from ..services.merchants import top_merchants
 from ..services.queries import current_month
+from ..services.weekly import weekly_summary
 
 router = APIRouter(prefix="/insights", tags=["análisis"])
 
@@ -17,6 +18,12 @@ def annual(year: int | None = Query(None, ge=2000, le=2100), db: Session = Depen
            user: User = Depends(current_user)):
     """Resumen del año (por defecto el actual): mes a mes, mejor y peor mes, ahorro y gasto por categoría."""
     return annual_summary(db, user.id, year or clock.today().year)
+
+
+@router.get("/weekly")
+def weekly(db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Tu semana (lunes a hoy): ingresos, gastos, comparación con la semana pasada, gasto por día y lo más grande."""
+    return weekly_summary(db, user.id)
 
 
 @router.get("/merchants")
