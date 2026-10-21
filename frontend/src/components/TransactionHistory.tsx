@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Account, api, Category, download, getPage, Institution, money, Tx } from "../api";
+import BulkBar from "./BulkBar";
 import InstitutionLogo from "./InstitutionLogo";
 
 const PAGE = 50;
@@ -99,6 +100,19 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
   const sum = (kind: "income" | "expense") =>
     items.filter((t) => !t.transfer_id && t.kind === kind).reduce((a, t) => a + Number(t.amount), 0);
 
+  // Selección múltiple: solo se pueden elegir movimientos «normales» (no transferencias ni préstamos).
+  const [sel, setSel] = useState<Set<number>>(new Set());
+  const selectable = items.filter((t) => !t.transfer_id && !t.loan_id);
+  const allChecked = selectable.length > 0 && selectable.every((t) => sel.has(t.id));
+  useEffect(() => { // al recargar, se descarta lo seleccionado que ya no está en pantalla
+    setSel((prev) => {
+      const visible = new Set(items.map((t) => t.id));
+      const next = new Set([...prev].filter((id) => visible.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [items]);
+  const toggle = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
   return (
     <div className="card">
       <h2>
@@ -150,14 +164,25 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
       </p>
       {error && <p className="error">{error}</p>}
 
+      {sel.size > 0 && <BulkBar ids={[...sel]} cats={cats} onClear={() => setSel(new Set())} onDone={() => { setSel(new Set()); onChanged(); }} />}
+
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Fecha</th><th>Cuenta</th><th>Categoría</th><th>Nota</th><th className="num">Monto</th><th /></tr></thead>
+          <thead><tr>
+            <th className="check-col">
+              <input type="checkbox" checked={allChecked} disabled={selectable.length === 0} aria-label="Seleccionar todos los movimientos de la página"
+                onChange={() => setSel(allChecked ? new Set() : new Set(selectable.map((t) => t.id)))} />
+            </th>
+            <th>Fecha</th><th>Cuenta</th><th>Categoría</th><th>Nota</th><th className="num">Monto</th><th /></tr></thead>
           <tbody>
             {items.map((t) => {
               const a = acc(t.account_id);
+              const locked = !!(t.transfer_id || t.loan_id);
               return (
-                <tr key={t.id}>
+                <tr key={t.id} className={sel.has(t.id) ? "picked" : ""}>
+                  <td className="check-col">
+                    {!locked && <input type="checkbox" checked={sel.has(t.id)} onChange={() => toggle(t.id)} aria-label={`Seleccionar «${t.note || "movimiento"}» del ${t.date}`} />}
+                  </td>
                   <td>{t.date}</td>
                   <td>
                     <span className="cell-acc">

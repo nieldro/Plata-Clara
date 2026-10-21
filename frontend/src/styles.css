@@ -142,6 +142,12 @@ progress::-moz-progress-bar { background: var(--gold); border-radius: 99px; }
 .modal h2 { font-size: 30px; margin: 4px 0 8px; }
 
 td.actions { white-space: nowrap; text-align: right; }
+.check-col { width: 34px; padding-right: 0; }
+.check-col input { accent-color: var(--gold); width: 16px; height: 16px; padding: 0; }
+tr.picked { background: rgba(201, 169, 106, 0.08); }
+.bulkbar { position: sticky; top: 8px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; padding: 10px 14px; border-radius: 14px; background: #17171d; border: 1px solid rgba(201, 169, 106, 0.4); box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.7); }
+.bulkbar select, .bulkbar input { padding: 7px 10px; }
+.bulkbar button { padding: 7px 14px; font-size: 13px; }
 .pace { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
 .card.quick { border-color: rgba(201, 169, 106, 0.3); }
 .row .grow { flex: 1 1 320px; }
