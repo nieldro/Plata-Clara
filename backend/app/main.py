@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
+from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -42,6 +43,9 @@ app = FastAPI(
     lifespan=lifespan,
     **docs_urls(settings.environment),
 )
+
+# Listas largas de movimientos y el esquema OpenAPI viajan mucho más livianos comprimidos (lo pequeño se deja tal cual).
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",     # el navegador no «adivina» el tipo de un archivo
