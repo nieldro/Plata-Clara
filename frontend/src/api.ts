@@ -1,6 +1,8 @@
-import { messageFor, NETWORK_ERROR } from "./errors";
+import { messageFor, NETWORK_ERROR, TIMEOUT_ERROR } from "./errors";
 
 const TOKEN_KEY = "token";
+const REQUEST_TIMEOUT_MS = 30_000;
+const UPLOAD_TIMEOUT_MS = 120_000;
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t: string | null) =>
@@ -35,11 +37,19 @@ async function send(path: string, init: RequestInit = {}): Promise<Response> {
   if (token) headers.set("Authorization", `Bearer ${token}`);
   if (typeof init.body === "string") headers.set("Content-Type", "application/json");
 
+  // Sin tope, una conexión colgada deja la pantalla cargando para siempre. Subir un extracto es más lento que lo demás.
+  const controller = new AbortController();
+  const limit = init.body instanceof FormData ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, limit);
+
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, { ...init, headers });
+    res = await fetch(`/api${path}`, { ...init, headers, signal: controller.signal });
   } catch {
-    throw new Error(NETWORK_ERROR); // servidor apagado, sin internet o bloqueado
+    throw new Error(timedOut ? TIMEOUT_ERROR : NETWORK_ERROR); // servidor apagado, sin internet o bloqueado
+  } finally {
+    clearTimeout(timer);
   }
   if (res.status === 401 && token) {
     setToken(null);

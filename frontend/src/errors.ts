@@ -1,5 +1,7 @@
 export const NETWORK_ERROR = "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.";
 
+export const TIMEOUT_ERROR = "El servidor tardó demasiado en responder. Inténtalo de nuevo en un momento.";
+
 type ValidationItem = { msg?: unknown };
 
 /** Mensaje en español para el usuario a partir de lo que respondió la API. */
