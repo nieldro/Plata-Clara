@@ -2,7 +2,7 @@ import datetime as _dt
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Numeric, String, Table,
+from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Index, Numeric, String, Table,
                         UniqueConstraint, func)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -60,6 +60,8 @@ class Category(Base):
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    # Casi toda consulta es «los movimientos de este usuario en este rango de fechas».
+    __table_args__ = (Index("ix_transactions_user_id_date", "user_id", "date"),)
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), index=True)
