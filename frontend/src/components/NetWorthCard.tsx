@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { money } from "../api";
+import { monthShortYear as label } from "../dates";
 import { GOLD, MUTED, tooltipStyle } from "../theme";
 import useCardData from "../hooks/useCardData";
 import CardSkeleton from "./CardSkeleton";
@@ -8,7 +9,6 @@ import CardSkeleton from "./CardSkeleton";
 type Point = { month: string; cash: number | string; debt: number | string; net_worth: number | string; estimated: boolean };
 type Data = { months: number; change: number | string; points: Point[] };
 
-const label = (m: string) => new Date(Number(m.slice(0, 4)), Number(m.slice(5)) - 1).toLocaleDateString("es-CO", { month: "short", year: "2-digit" });
 const RANGES = [6, 12, 24];
 
 export default function NetWorthCard() {

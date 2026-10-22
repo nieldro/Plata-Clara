@@ -8,6 +8,7 @@ import NetWorthCard from "../components/NetWorthCard";
 import OnboardingCard from "../components/OnboardingCard";
 import UpcomingCard from "../components/UpcomingCard";
 import WeeklyCard from "../components/WeeklyCard";
+import { monthShort as monthLabel } from "../dates";
 import { GOLD, MUTED, NEG, PIE_COLORS, tooltipStyle } from "../theme";
 
 type Summary = {
@@ -15,9 +16,6 @@ type Summary = {
   expense_by_category: { category: string; total: number }[];
 };
 type TrendPoint = { month: string; income: number; expense: number };
-
-const monthLabel = (m: string) =>
-  new Date(Number(m.slice(0, 4)), Number(m.slice(5)) - 1).toLocaleDateString("es-CO", { month: "short" });
 
 export default function Dashboard() {
   const month = localMonth();

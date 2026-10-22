@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { api, localDate, money } from "../api";
 import CountUp from "../components/CountUp";
+import { monthName, monthShort } from "../dates";
 import { GOLD, MUTED, NEG, tooltipStyle } from "../theme";
 
 type Month = { month: string; income: number | string; expense: number | string; net: number | string };
@@ -10,9 +11,6 @@ type Data = {
   active_months: number; avg_monthly_expense: number | string; best_month: string | null; worst_month: string | null;
   months: Month[]; top_categories: { category: string; total: number | string; pct: number }[];
 };
-
-const monthName = (m: string) => new Date(Number(m.slice(0, 4)), Number(m.slice(5)) - 1).toLocaleDateString("es-CO", { month: "long" });
-const monthShort = (m: string) => new Date(Number(m.slice(0, 4)), Number(m.slice(5)) - 1).toLocaleDateString("es-CO", { month: "short" });
 
 export default function Annual() {
   const thisYear = Number(localDate().slice(0, 4));

@@ -4,19 +4,13 @@ import { api, Category, localMonth, money } from "../api";
 import BudgetSuggestions from "../components/BudgetSuggestions";
 import RecurringSection from "../components/RecurringSection";
 import RecurringSuggestions from "../components/RecurringSuggestions";
+import { monthYear as label, shiftMonth as shift } from "../dates";
 import { EASE } from "../theme";
 
 type Item = {
   category_id: number; category: string; amount: number; spent: number; remaining: number; pct: number;
   daily_allowance: number | string | null; projected_spend: number | string | null; projected_over: boolean | null;
 };
-
-const shift = (month: string, delta: number) => {
-  const d = new Date(Number(month.slice(0, 4)), Number(month.slice(5)) - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-};
-const label = (month: string) =>
-  new Date(Number(month.slice(0, 4)), Number(month.slice(5)) - 1).toLocaleDateString("es-CO", { month: "long", year: "numeric" });
 
 export const levelOf = (pct: number) => (pct > 100 ? "over" : pct >= 80 ? "warn" : "ok");
 
