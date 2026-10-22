@@ -5,6 +5,7 @@ import CountUp from "../components/CountUp";
 import ForecastCard from "../components/ForecastCard";
 import MerchantsCard from "../components/MerchantsCard";
 import NetWorthCard from "../components/NetWorthCard";
+import OnboardingCard from "../components/OnboardingCard";
 import UpcomingCard from "../components/UpcomingCard";
 import WeeklyCard from "../components/WeeklyCard";
 import { GOLD, MUTED, NEG, PIE_COLORS, tooltipStyle } from "../theme";
@@ -64,6 +65,7 @@ export default function Dashboard() {
 
   return (
     <>
+      <OnboardingCard />
       <div className="tiles">
         {tiles.map((t) => (
           <div className="card tile" key={t.label}>
