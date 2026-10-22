@@ -25,7 +25,7 @@ copy .env.example .env      # edita las claves
 docker compose up --build
 ```
 - App: http://localhost:5173
-- API + documentación Swagger: http://localhost:8000/docs
+- API + documentación Swagger (solo en desarrollo): http://localhost:8000/docs
 
 **Sin Docker (desarrollo)**
 ```powershell
@@ -156,6 +156,11 @@ frontend/src/pages/  Resumen, Cuentas y movimientos, Importar extracto, Quién m
 - **Preferencias de avisos:** en Ajustes puedes silenciar cada tipo (presupuestos, pagos, metas, préstamos, recurrentes).
 - **Cerrar sesión en los demás dispositivos** sin cambiar la contraseña.
 - **Modo privacidad:** el ojo del encabezado oculta todos los montos de la pantalla y recuerda tu elección.
+- **Primeros pasos:** en el Resumen, una lista (cuenta, movimiento, presupuesto, meta) que se oculta al completarla o con «Ocultar».
+- **Atajos y accesibilidad:** `/` lleva a la búsqueda del historial; hay un enlace para saltar el menú; con «reducir
+  movimiento» activo en el sistema se omiten las animaciones. Las fechas del historial se leen como «Hoy», «Ayer» o
+  «22 de oct» (la fecha exacta aparece al pasar el cursor).
+- **Rendimiento:** cada pantalla se descarga al abrirla y las respuestas grandes de la API van comprimidas con gzip.
 
 ### App instalable
 Se puede instalar en el celular o el computador («Agregar a la pantalla de inicio»). El *service worker* guarda solo la
@@ -182,6 +187,12 @@ Para cambiar los íconos: `python frontend/scripts/make_icons.py` (necesita Pill
 - **Cabeceras:** la API responde con `X-Content-Type-Options`, `X-Frame-Options` y `Referrer-Policy`, y marca sus datos
   privados como `Cache-Control: no-store`.
 - **Salud:** `/health` (¿está vivo?) y `/health/ready` (¿responde la base de datos?, 503 si no); Docker usa el segundo.
+- **Errores imprevistos:** la API responde un JSON genérico (nunca el detalle interno) y deja el error completo en el
+  registro del servidor. El frontend corta las peticiones colgadas a los 30 s (120 s al subir archivos) y lo explica.
+- **Documentación de la API:** `/docs` solo existe en desarrollo; con `ENVIRONMENT=production` no se publican `/docs`,
+  `/redoc` ni `/openapi.json`.
+- **Dependencias:** Dependabot propone actualizaciones cada semana (pip, npm) y cada mes (Docker, GitHub Actions).
+  Para reportar una vulnerabilidad, mira [SECURITY.md](SECURITY.md).
 - **Sin credenciales en el repositorio:** `.env` está en `.gitignore`; solo se sube `.env.example` con valores de ejemplo.
   Un escaneo con gitleaks (`.github/workflows/secrets.yml`) revisa toda la historia en cada push.
 - Con `ENVIRONMENT=production` la API **no arranca** si `SECRET_KEY` es la de desarrollo o tiene menos de 32 caracteres.
@@ -194,9 +205,9 @@ Para cambiar los íconos: `python frontend/scripts/make_icons.py` (necesita Pill
 
 ## Pruebas y CI
 ```powershell
-cd backend;  .\.venv\Scripts\python.exe -m pytest -q       # 377 pruebas del backend
+cd backend;  .\.venv\Scripts\python.exe -m pytest -q       # 384 pruebas del backend
 cd backend;  .\.venv\Scripts\ruff.exe check .              # análisis de código (lint)
-cd frontend; npm test                                      # 18 pruebas del frontend (vitest)
+cd frontend; npm test                                      # 34 pruebas del frontend (vitest)
 ```
 Las pruebas del backend corren sobre SQLite en memoria **con llaves foráneas activadas** (como PostgreSQL), una carpeta
 de archivos nueva en cada prueba, y verifican que las migraciones coincidan con los modelos. GitHub Actions corre en
