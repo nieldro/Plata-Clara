@@ -2,6 +2,7 @@ import "@fontsource-variable/inter";
 import "@fontsource/cormorant-garamond/500.css";
 import "@fontsource/cormorant-garamond/600.css";
 import "@fontsource/cormorant-garamond/500-italic.css";
+import { MotionConfig } from "framer-motion";
 import Lenis from "lenis";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -37,8 +38,11 @@ document.addEventListener("pointermove", (e) => {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ErrorBoundary scope="app">
-      <App />
-    </ErrorBoundary>
+    {/* reducedMotion="user": con «reducir movimiento» activo en el sistema, las animaciones de desplazamiento se omiten */}
+    <MotionConfig reducedMotion="user">
+      <ErrorBoundary scope="app">
+        <App />
+      </ErrorBoundary>
+    </MotionConfig>
   </StrictMode>,
 );
