@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Account, api, Category, download, getPage, Institution, money, Tx } from "../api";
+import useSlashFocus from "../hooks/useSlashFocus";
 import BulkBar from "./BulkBar";
 import InstitutionLogo from "./InstitutionLogo";
 
@@ -48,6 +49,8 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const reqId = useRef(0);
+  const searchRef = useRef<HTMLInputElement>(null);
+  useSlashFocus(searchRef);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(f.q), 300);
@@ -162,7 +165,7 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
       )}
 
       <div className="filters">
-        <input className="grow" type="search" placeholder="Buscar por nota o categoría…" value={f.q} onChange={set("q")} />
+        <input ref={searchRef} className="grow" type="search" placeholder="Buscar por nota o categoría…  ( / )" aria-keyshortcuts="/" value={f.q} onChange={set("q")} />
         <select value={f.kind} onChange={set("kind")}>
           <option value="">Gastos e ingresos</option>
           <option value="expense">Solo gastos</option>
