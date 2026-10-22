@@ -1,23 +1,26 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ReactNode, useEffect, useState } from "react";
+import { ComponentType, lazy, ReactNode, Suspense, useEffect, useState } from "react";
 import { api, isPrivate, setPrivate } from "../api";
-import Annual from "../pages/Annual";
-import Assistant from "../pages/Assistant";
-import Budgets from "../pages/Budgets";
-import Dashboard from "../pages/Dashboard";
-import Import from "../pages/Import";
-import Loans from "../pages/Loans";
-import Debts from "../pages/Debts";
-import Savings from "../pages/Savings";
-import Settings from "../pages/Settings";
-import Simulator from "../pages/Simulator";
-import Transactions from "../pages/Transactions";
 import { EASE } from "../theme";
 import ErrorBoundary from "./ErrorBoundary";
 import { Icons, Logo } from "./Icons";
 import NotificationBell from "./NotificationBell";
+import PageLoading from "./PageLoading";
 
-const TABS: { key: string; label: string; icon: ReactNode; page: () => JSX.Element }[] = [
+// Cada pantalla se descarga solo cuando entras a ella (así la primera carga es mucho más liviana).
+const Dashboard = lazy(() => import("../pages/Dashboard"));
+const Transactions = lazy(() => import("../pages/Transactions"));
+const Annual = lazy(() => import("../pages/Annual"));
+const Import = lazy(() => import("../pages/Import"));
+const Loans = lazy(() => import("../pages/Loans"));
+const Budgets = lazy(() => import("../pages/Budgets"));
+const Debts = lazy(() => import("../pages/Debts"));
+const Savings = lazy(() => import("../pages/Savings"));
+const Assistant = lazy(() => import("../pages/Assistant"));
+const Simulator = lazy(() => import("../pages/Simulator"));
+const Settings = lazy(() => import("../pages/Settings"));
+
+const TABS: { key: string; label: string; icon: ReactNode; page: ComponentType }[] = [
   { key: "home", label: "Resumen", icon: Icons.home, page: Dashboard },
   { key: "tx", label: "Cuentas y movimientos", icon: Icons.swap, page: Transactions },
   { key: "annual", label: "Mi año", icon: Icons.calendar, page: Annual },
@@ -96,7 +99,11 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.45, ease: EASE }}
           >
-            {ready && <ErrorBoundary resetKey={tab}><Page key={String(priv)} /></ErrorBoundary>}
+            {ready && (
+              <ErrorBoundary resetKey={tab}>
+                <Suspense fallback={<PageLoading />}><Page key={String(priv)} /></Suspense>
+              </ErrorBoundary>
+            )}
           </motion.div>
         </AnimatePresence>
       </section>
