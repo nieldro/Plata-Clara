@@ -1,16 +1,16 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { api, money } from "../api";
+import { money } from "../api";
 import { EASE } from "../theme";
+import useCardData from "../hooks/useCardData";
+import CardSkeleton from "./CardSkeleton";
 
 type Item = { name: string; key: string; count: number; total: number | string; pct: number };
 type Data = { month: string; total_expense: number | string; merchants: number; items: Item[] };
 
 export default function MerchantsCard({ month }: { month: string }) {
-  const [data, setData] = useState<Data | null>(null);
+  const { data, loading } = useCardData<Data>(`/insights/merchants?month=${month}&limit=8`);
 
-  useEffect(() => { api.get<Data>(`/insights/merchants?month=${month}&limit=8`).then(setData).catch(() => setData(null)); }, [month]);
-  if (!data) return null;
+  if (!data) return loading ? <CardSkeleton lines={4} /> : null;
 
   return (
     <div className="card">

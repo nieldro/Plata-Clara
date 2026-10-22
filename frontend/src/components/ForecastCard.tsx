@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { api, money } from "../api";
+import { money } from "../api";
 import { shortDate as short } from "../dates";
 import { GOLD, MUTED, NEG, tooltipStyle } from "../theme";
+import useCardData from "../hooks/useCardData";
+import CardSkeleton from "./CardSkeleton";
 
 type Point = { date: string; balance: number | string };
 type Data = {
@@ -15,10 +17,9 @@ const RANGES = [30, 60, 90];
 
 export default function ForecastCard() {
   const [days, setDays] = useState(60);
-  const [data, setData] = useState<Data | null>(null);
+  const { data, loading } = useCardData<Data>(`/forecast?days=${days}`);
 
-  useEffect(() => { api.get<Data>(`/forecast?days=${days}`).then(setData).catch(() => setData(null)); }, [days]);
-  if (!data) return null;
+  if (!data) return loading ? <CardSkeleton lines={4} /> : null;
 
   const points = data.series.map((p) => ({ ...p, balance: Number(p.balance), label: short(p.date) }));
   const flat = points.every((p) => p.balance === points[0].balance);

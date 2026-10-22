@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { api, money } from "../api";
+import { money } from "../api";
 import { GOLD, MUTED, tooltipStyle } from "../theme";
+import useCardData from "../hooks/useCardData";
+import CardSkeleton from "./CardSkeleton";
 
 type Point = { month: string; cash: number | string; debt: number | string; net_worth: number | string; estimated: boolean };
 type Data = { months: number; change: number | string; points: Point[] };
@@ -11,10 +13,8 @@ const RANGES = [6, 12, 24];
 
 export default function NetWorthCard() {
   const [months, setMonths] = useState(12);
-  const [data, setData] = useState<Data | null>(null);
-
-  useEffect(() => { api.get<Data>(`/net-worth?months=${months}`).then(setData).catch(() => setData(null)); }, [months]);
-  if (!data) return null;
+  const { data, loading } = useCardData<Data>(`/net-worth?months=${months}`);
+  if (!data) return loading ? <CardSkeleton lines={4} /> : null;
 
   const points = data.points.map((p) => ({ ...p, label: label(p.month), net: Number(p.net_worth), cash: Number(p.cash), debt: Number(p.debt) }));
   const last = points[points.length - 1];

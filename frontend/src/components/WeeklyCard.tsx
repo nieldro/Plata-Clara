@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import { api, money } from "../api";
+import { money } from "../api";
 import { shortDate as short } from "../dates";
 import { GOLD, MUTED, tooltipStyle } from "../theme";
+import useCardData from "../hooks/useCardData";
+import CardSkeleton from "./CardSkeleton";
 
 type Data = {
   days_elapsed: number; income: number | string; expense: number | string; transactions: number;
@@ -15,9 +16,8 @@ type Data = {
 const DAY = ["L", "M", "X", "J", "V", "S", "D"];
 
 export default function WeeklyCard() {
-  const [data, setData] = useState<Data | null>(null);
-  useEffect(() => { api.get<Data>("/insights/weekly").then(setData).catch(() => setData(null)); }, []);
-  if (!data) return null;
+  const { data, loading } = useCardData<Data>("/insights/weekly");
+  if (!data) return loading ? <CardSkeleton lines={4} /> : null;
 
   const chart = data.daily.map((d, i) => ({ label: DAY[i], date: d.date, gasto: Number(d.expense), future: d.future }));
   const change = data.expense_change_pct;

@@ -402,3 +402,8 @@ details.cols summary { cursor: pointer; }
 .skip-link { position: fixed; left: 12px; top: -64px; z-index: 100; padding: 10px 16px; border-radius: 10px; background: var(--gold); color: #111; font-weight: 600; text-decoration: none; transition: top 0.2s; }
 .skip-link:focus { top: 12px; }
 .content:focus { outline: none; }
+/* Esqueleto de tarjeta mientras llegan los datos */
+.skeleton { display: flex; flex-direction: column; gap: 12px; min-height: 160px; }
+.sk-line { display: block; height: 12px; border-radius: 99px; background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.05) 75%); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; }
+.sk-title { width: 38%; height: 20px; margin-bottom: 6px; }
+@keyframes shimmer { to { background-position: -200% 0; } }

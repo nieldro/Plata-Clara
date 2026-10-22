@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
-import { api, money } from "../api";
+import { useState } from "react";
+import { money } from "../api";
+import useCardData from "../hooks/useCardData";
+import CardSkeleton from "./CardSkeleton";
 
 type Item = {
   date: string; days: number; kind: "income" | "expense"; title: string; amount: number | string | null;
@@ -16,12 +18,10 @@ const when = (i: Item) =>
 const SHOWN = 8;
 
 export default function UpcomingCard({ days = 30 }: { days?: number }) {
-  const [data, setData] = useState<Data | null>(null);
+  const { data, loading } = useCardData<Data>(`/upcoming?days=${days}`);
   const [all, setAll] = useState(false);
 
-  useEffect(() => { api.get<Data>(`/upcoming?days=${days}`).then(setData).catch(() => setData(null)); }, [days]);
-
-  if (!data) return null;
+  if (!data) return loading ? <CardSkeleton lines={4} /> : null;
   const items = all ? data.items : data.items.slice(0, SHOWN);
 
   return (
