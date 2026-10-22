@@ -343,7 +343,7 @@ details.cols summary { cursor: pointer; }
 .scroll-hint { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); }
 .scroll-hint::after { content: ""; display: block; width: 1px; height: 34px; margin: 10px auto 0; background: linear-gradient(var(--gold), transparent); }
 
-.stats { max-width: 1100px; margin: 0 auto; padding: 60px clamp(20px, 5vw, 64px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.stats { max-width: 1100px; margin: 0 auto; padding: 60px clamp(20px, 5vw, 64px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .stat { text-align: center; }
 .stat b { display: block; font-family: var(--serif); font-size: clamp(48px, 7vw, 84px); font-weight: 500; line-height: 1; color: var(--gold-soft); }
 .stat span { color: var(--muted); font-size: 14px; }

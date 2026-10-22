@@ -27,12 +27,29 @@ const FEATURES = [
     n: "04", title: "Metas de ahorro con fecha",
     text: "Define el monto, la fecha y cuánto rinde tu dinero. Te decimos cuánto ahorrar cada mes para llegar, con una barra que muestra tu avance.",
   },
+  {
+    n: "05", title: "Importa tu extracto, sin duplicar",
+    text: "Sube el archivo de tu banco (CSV o Excel), revisa la vista previa y guarda. Si lo subes dos veces, la segunda no repite nada. Aprende tus categorías con cada uso.",
+  },
+  {
+    n: "06", title: "Presupuestos que te avisan a tiempo",
+    text: "Un tope por categoría, cuánto puedes gastar por día y un aviso al llegar al 80 %, antes de pasarte. También te sugiere topes según tus últimos meses.",
+  },
+  {
+    n: "07", title: "Mira hacia adelante",
+    text: "Tus próximos pagos y cobros, y una proyección día a día de tu efectivo que te dice si vas a quedar en negativo y cuándo.",
+  },
+  {
+    n: "08", title: "Tuyo, y también privado",
+    text: "Un botón oculta todos los montos de la pantalla. Exporta todo a Excel o JSON cuando quieras, o borra tu cuenta con todo lo que contiene.",
+  },
 ];
 
 const STATS = [
   { v: 100, suffix: "%", label: "Gratuito, sin anuncios" },
   { v: 3, suffix: "", label: "Tipos de tasa: EA, MV y NA" },
   { v: 600, suffix: "", label: "Meses de proyección" },
+  { v: 40, suffix: "+", label: "Bancos, billeteras y apps de inversión" },
 ];
 
 const STATEMENT =
