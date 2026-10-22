@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Account, api, Category, download, getPage, Institution, money, Tx } from "../api";
+import { friendlyDate } from "../dates";
 import useSlashFocus from "../hooks/useSlashFocus";
 import BulkBar from "./BulkBar";
 import InstitutionLogo from "./InstitutionLogo";
@@ -227,7 +228,7 @@ export default function TransactionHistory({ accounts, cats, tagNames, insts, ac
                   <td className="check-col">
                     {!locked && <input type="checkbox" checked={sel.has(t.id)} onChange={() => toggle(t.id)} aria-label={`Seleccionar «${t.note || "movimiento"}» del ${t.date}`} />}
                   </td>
-                  <td>{t.date}</td>
+                  <td title={t.date}>{friendlyDate(t.date)}</td>
                   <td>
                     <span className="cell-acc">
                       {a && <InstitutionLogo inst={instOf(a)} name={entityName(a)} size={26} />}

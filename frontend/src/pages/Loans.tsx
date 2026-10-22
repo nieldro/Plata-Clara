@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Account, api, Category, localDate, money } from "../api";
+import { friendlyDate } from "../dates";
 import CountUp from "../components/CountUp";
 
 type Payment = { id: number; amount: number; date: string; note: string; in_account: boolean };
@@ -234,7 +235,7 @@ export default function Loans() {
                   <table><tbody>
                     {detail.payments.map((p) => (
                       <tr key={p.id}>
-                        <td>{p.date}</td><td>{p.note || "Abono"}{p.in_account && " · en cuenta"}</td>
+                        <td title={p.date}>{friendlyDate(p.date)}</td><td>{p.note || "Abono"}{p.in_account && " · en cuenta"}</td>
                         <td className="num">{money(p.amount)}</td>
                         <td className="actions"><button className="link" aria-label="Borrar abono" onClick={() => removePayment(detail, p)}>✕</button></td>
                       </tr>

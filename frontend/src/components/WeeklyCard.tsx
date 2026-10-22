@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { api, money } from "../api";
+import { shortDate as short } from "../dates";
 import { GOLD, MUTED, tooltipStyle } from "../theme";
 
 type Data = {
@@ -12,7 +13,6 @@ type Data = {
 };
 
 const DAY = ["L", "M", "X", "J", "V", "S", "D"];
-const short = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
 
 export default function WeeklyCard() {
   const [data, setData] = useState<Data | null>(null);

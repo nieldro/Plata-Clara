@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, money } from "../api";
+import { shortDate as short } from "../dates";
 import { GOLD, MUTED, NEG, tooltipStyle } from "../theme";
 
 type Point = { date: string; balance: number | string };
@@ -11,7 +12,6 @@ type Data = {
 };
 
 const RANGES = [30, 60, 90];
-const short = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
 
 export default function ForecastCard() {
   const [days, setDays] = useState(60);
