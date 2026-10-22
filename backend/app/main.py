@@ -5,6 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from . import models  # noqa: F401  (registra las tablas)
+from .config import settings
 from .db import get_db
 from .migrate import run_migrations
 from .routers import (account, assistant, attachments, auth, budgets, bulk, core, debts, exports, imports, insights,
@@ -18,7 +19,29 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Finanzas Personales", version="0.1.0", lifespan=lifespan)
+DESCRIPTION = """
+API de **Plata Clara**: cuentas, movimientos, presupuestos, deudas, ahorro, préstamos entre personas,
+importación de extractos, informes y un asistente que sugiere qué hacer con tu dinero.
+
+Todas las rutas (salvo registro, inicio de sesión y `/health`) piden el encabezado
+`Authorization: Bearer <token>` que entrega `POST /api/auth/login`.
+"""
+
+
+def docs_urls(environment: str) -> dict[str, str | None]:
+    """La documentación interactiva sirve en desarrollo; en producción no se publica el mapa de la API."""
+    if environment == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
+
+
+app = FastAPI(
+    title="Plata Clara",
+    version="0.1.0",
+    description=DESCRIPTION,
+    lifespan=lifespan,
+    **docs_urls(settings.environment),
+)
 
 SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",     # el navegador no «adivina» el tipo de un archivo
