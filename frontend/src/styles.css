@@ -382,6 +382,13 @@ details.cols summary { cursor: pointer; }
   .nav-item > span:nth-child(3) { display: inline; }
   .content { padding-top: 32px; }
 }
+/* En el teléfono las tablas anchas se deslizan hacia los lados en vez de romper el diseño de la página. */
+@media (max-width: 640px) {
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  th, td { padding: 10px 10px; }
+  td small.block { white-space: normal; min-width: 140px; }
+  .card { padding-left: 18px; padding-right: 18px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }
@@ -390,7 +397,7 @@ details.cols summary { cursor: pointer; }
 .page-loading { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 40vh; color: var(--muted); }
 .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(201, 169, 106, 0.25); border-top-color: var(--gold); animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+
 /* Accesibilidad: enlace para saltar el menú (aparece solo al navegar con teclado) */
 .skip-link { position: fixed; left: 12px; top: -64px; z-index: 100; padding: 10px 16px; border-radius: 10px; background: var(--gold); color: #111; font-weight: 600; text-decoration: none; transition: top 0.2s; }
 .skip-link:focus { top: 12px; }
