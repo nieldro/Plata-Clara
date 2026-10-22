@@ -1,7 +1,9 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,9 @@ from .migrate import run_migrations
 from .routers import (account, assistant, attachments, auth, budgets, bulk, core, debts, exports, imports, insights,
                       loans, networth, notifications, quickadd, recurring, reports, rules, saved_filters,
                       savings, simulator, tags, upcoming)
+
+
+log = logging.getLogger("uvicorn.error")
 
 
 @asynccontextmanager
@@ -64,6 +69,18 @@ async def security_headers(request: Request, call_next):
         # necesite otra política (como la descarga de recibos) ya la trae puesta y se respeta.
         response.headers.setdefault("Cache-Control", "no-store")
     return response
+
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    """Un fallo imprevisto se registra completo en el servidor, pero el cliente solo recibe un mensaje genérico en JSON."""
+    log.error("Error no controlado en %s %s", request.method, request.url.path, exc_info=exc)
+    # Este manejador corre fuera de los middlewares, así que las cabeceras de seguridad se ponen aquí.
+    return JSONResponse(
+        {"detail": "Ocurrió un error inesperado. Inténtalo de nuevo; si sigue pasando, avisa al administrador."},
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        headers={**SECURITY_HEADERS, "Cache-Control": "no-store"},
+    )
+
 
 api = APIRouter(prefix="/api")
 for r in (
