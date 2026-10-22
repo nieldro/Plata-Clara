@@ -391,3 +391,7 @@ details.cols summary { cursor: pointer; }
 .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(201, 169, 106, 0.25); border-top-color: var(--gold); animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+/* Accesibilidad: enlace para saltar el menú (aparece solo al navegar con teclado) */
+.skip-link { position: fixed; left: 12px; top: -64px; z-index: 100; padding: 10px 16px; border-radius: 10px; background: var(--gold); color: #111; font-weight: 600; text-decoration: none; transition: top 0.2s; }
+.skip-link:focus { top: 12px; }
+.content:focus { outline: none; }

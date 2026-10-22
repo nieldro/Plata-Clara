@@ -60,9 +60,10 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="shell">
+      <a className="skip-link" href="#contenido">Saltar al contenido</a>
       <aside className="side">
         <div className="brand"><Logo /> <span>Plata Clara</span></div>
-        <nav>
+        <nav aria-label="Secciones">
           {TABS.map((t) => (
             <button key={t.key} className={`nav-item ${t.key === tab ? "active" : ""}`} onClick={() => { setTab(t.key); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
               {t.key === tab && <motion.span layoutId="nav-pill" className="nav-pill" transition={{ duration: 0.5, ease: EASE }} />}
@@ -76,7 +77,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
         </button>
       </aside>
 
-      <section className="content">
+      <main className="content" id="contenido" tabIndex={-1}>
         <header className="page-head">
           <div>
             <small>{name ? `Hola, ${name}` : " "}</small>
@@ -106,7 +107,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
             )}
           </motion.div>
         </AnimatePresence>
-      </section>
+      </main>
     </div>
   );
 }
