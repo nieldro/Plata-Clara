@@ -64,7 +64,6 @@ export default function Transactions() {
 
   const instOf = (a: Account) => insts.find((i) => i.slug === a.institution);
   const entityName = (a: Account) => instOf(a)?.name ?? a.institution_name ?? "Efectivo";
-  const acc = (id: number) => accounts.find((a) => a.id === id);
   const catName = (id: number | null) => cats.find((c) => c.id === id)?.name ?? "—";
 
   async function addTx(e: FormEvent<HTMLFormElement>) {
